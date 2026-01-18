@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package payment;
+
+option go_package = "go-boilerplate/pkg/pb/payment";
+
+service PaymentService {
+  rpc CheckStatus (CheckStatusRequest) returns (CheckStatusResponse);
+}
+
+message CheckStatusRequest {
+  string transaction_id = 1;
+}
+
+message CheckStatusResponse {
+  string id = 1;
+  string status = 2;
+  double amount = 3;
+}
