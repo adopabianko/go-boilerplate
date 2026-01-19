@@ -36,11 +36,29 @@ func (m *MockUserRepository) List(ctx context.Context, page, limit int, order st
 	return args.Get(0).([]entity.User), args.Get(1).(int64), args.Error(2)
 }
 
+func (m *MockUserRepository) GetByID(ctx context.Context, id uint) (*entity.User, error) {
+	args := m.Called(ctx, id)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*entity.User), args.Error(1)
+}
+
+func (m *MockUserRepository) Update(ctx context.Context, user *entity.User) error {
+	args := m.Called(ctx, user)
+	return args.Error(0)
+}
+
+func (m *MockUserRepository) Delete(ctx context.Context, id uint) error {
+	args := m.Called(ctx, id)
+	return args.Error(0)
+}
+
 func TestUserUsecase_Register_Success(t *testing.T) {
 	mockRepo := new(MockUserRepository)
 	cfg := &config.Config{}
 
-	uc := usecase.NewUserUsecase(mockRepo, cfg)
+	uc := usecase.NewUserUsecase(mockRepo, cfg, nil)
 
 	mockRepo.On("GetByEmail", mock.Anything, "test@example.com").Return(nil, nil)
 	mockRepo.On("Create", mock.Anything, mock.MatchedBy(func(u *entity.User) bool {
@@ -56,7 +74,7 @@ func TestUserUsecase_Login_Success(t *testing.T) {
 	mockRepo := new(MockUserRepository)
 	cfg := &config.Config{JWT: config.JWTConfig{SecretKey: "secret"}}
 
-	uc := usecase.NewUserUsecase(mockRepo, cfg)
+	uc := usecase.NewUserUsecase(mockRepo, cfg, nil)
 
 	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("password123"), bcrypt.DefaultCost)
 	user := &entity.User{
@@ -77,7 +95,7 @@ func TestUserUsecase_ListUsers(t *testing.T) {
 	mockRepo := new(MockUserRepository)
 	cfg := &config.Config{}
 
-	uc := usecase.NewUserUsecase(mockRepo, cfg)
+	uc := usecase.NewUserUsecase(mockRepo, cfg, nil)
 
 	users := []entity.User{
 		{ID: 1, Email: "u1@example.com"},

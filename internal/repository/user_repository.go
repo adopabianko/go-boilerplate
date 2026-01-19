@@ -12,6 +12,9 @@ type UserRepository interface {
 	Create(ctx context.Context, user *entity.User) error
 	GetByEmail(ctx context.Context, email string) (*entity.User, error)
 	List(ctx context.Context, page, limit int, order string) ([]entity.User, int64, error)
+	GetByID(ctx context.Context, id uint) (*entity.User, error)
+	Update(ctx context.Context, user *entity.User) error
+	Delete(ctx context.Context, id uint) error
 }
 
 type userRepository struct {
@@ -57,4 +60,20 @@ func (r *userRepository) List(ctx context.Context, page, limit int, order string
 	}
 
 	return users, total, nil
+}
+
+func (r *userRepository) GetByID(ctx context.Context, id uint) (*entity.User, error) {
+	var user entity.User
+	if err := r.db.WithContext(ctx).First(&user, id).Error; err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
+
+func (r *userRepository) Update(ctx context.Context, user *entity.User) error {
+	return r.db.WithContext(ctx).Save(user).Error
+}
+
+func (r *userRepository) Delete(ctx context.Context, id uint) error {
+	return r.db.WithContext(ctx).Delete(&entity.User{}, id).Error
 }

@@ -38,6 +38,24 @@ func (m *MockUserUsecase) ListUsers(ctx context.Context, page, limit int, order 
 	return args.Get(0).([]entity.User), args.Get(1).(int64), args.Error(2)
 }
 
+func (m *MockUserUsecase) GetUser(ctx context.Context, id uint) (*entity.User, error) {
+	args := m.Called(ctx, id)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*entity.User), args.Error(1)
+}
+
+func (m *MockUserUsecase) UpdateUser(ctx context.Context, id uint, email string) error {
+	args := m.Called(ctx, id, email)
+	return args.Error(0)
+}
+
+func (m *MockUserUsecase) DeleteUser(ctx context.Context, id uint) error {
+	args := m.Called(ctx, id)
+	return args.Error(0)
+}
+
 func setupRouter() *gin.Engine {
 	gin.SetMode(gin.TestMode)
 	r := gin.New()

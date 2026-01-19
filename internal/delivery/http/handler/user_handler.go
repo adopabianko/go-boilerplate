@@ -2,6 +2,7 @@ package handler
 
 import (
 	"net/http"
+	"strconv"
 
 	"go-boilerplate/internal/usecase"
 	"go-boilerplate/pkg/errors"
@@ -124,4 +125,87 @@ func (h *UserHandler) ListUsers(c *gin.Context) {
 	}
 
 	response.SuccessWithPagination(c, http.StatusOK, "User list", users, meta)
+}
+
+// GetUser godoc
+// @Summary      Get a user by ID
+// @Tags         users
+// @Accept       json
+// @Produce      json
+// @Param        id   path      int  true  "User ID"
+// @Success      200  {object}  response.Response
+// @Failure      404  {object}  response.Response
+// @Router       /api/v1/users/{id} [get]
+func (h *UserHandler) GetUser(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		response.Error(c, errors.New(http.StatusBadRequest, "Invalid User ID"))
+		return
+	}
+
+	user, err := h.usecase.GetUser(c.Request.Context(), uint(id))
+	if err != nil {
+		response.Error(c, err)
+		return
+	}
+
+	response.Success(c, http.StatusOK, "User retrieved successfully", user)
+}
+
+// UpdateUser godoc
+// @Summary      Update a user
+// @Tags         users
+// @Accept       json
+// @Produce      json
+// @Param        id   path      int  true  "User ID"
+// @Param        request body dto.RegisterRequest true "Update Request"
+// @Success      200  {object}  response.Response
+// @Failure      500  {object}  response.Response
+// @Router       /api/v1/users/{id} [put]
+func (h *UserHandler) UpdateUser(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		response.Error(c, errors.New(http.StatusBadRequest, "Invalid User ID"))
+		return
+	}
+
+	var req dto.RegisterRequest // Reusing RegisterRequest for simplicity
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Error(c, errors.New(http.StatusBadRequest, err.Error()))
+		return
+	}
+
+	if err := h.usecase.UpdateUser(c.Request.Context(), uint(id), req.Email); err != nil {
+		response.Error(c, err)
+		return
+	}
+
+	response.Success(c, http.StatusOK, "User updated successfully", nil)
+}
+
+// DeleteUser godoc
+// @Summary      Delete a user
+// @Tags         users
+// @Accept       json
+// @Produce      json
+// @Param        id   path      int  true  "User ID"
+// @Success      200  {object}  response.Response
+// @Failure      500  {object}  response.Response
+// @Router       /api/v1/users/{id} [delete]
+func (h *UserHandler) DeleteUser(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		response.Error(c, errors.New(http.StatusBadRequest, "Invalid User ID"))
+		return
+	}
+
+	if err := h.usecase.DeleteUser(c.Request.Context(), uint(id)); err != nil {
+		response.Error(c, err)
+		return
+	}
+
+	response.Success(c, http.StatusOK, "User deleted successfully", nil)
 }

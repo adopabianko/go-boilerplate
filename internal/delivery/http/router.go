@@ -54,6 +54,9 @@ func NewRouter(
 		user.Use(middleware.AuthMiddleware(cfg.JWT))
 		{
 			user.GET("", userHandler.ListUsers) // GET /api/v1/users
+			user.GET("/:id", userHandler.GetUser)
+			user.PUT("/:id", userHandler.UpdateUser)
+			user.DELETE("/:id", userHandler.DeleteUser)
 			user.GET("/me", func(c *gin.Context) {
 				// Example protected route
 				userID, _ := c.Get("userID")

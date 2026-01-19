@@ -100,13 +100,35 @@ curl -i -X GET http://localhost:8080/api/v1/users/me \
   -H "Authorization: Bearer <TOKEN>"
 ```
 
-### 6. Get Products (External API)
+### 6. User CRUD Operations (Protected)
+
+**Get User Detail:**
+```bash
+curl -i -X GET http://localhost:8080/api/v1/users/1 \
+  -H "Authorization: Bearer <TOKEN>"
+```
+
+**Update User:**
+```bash
+curl -i -X PUT http://localhost:8080/api/v1/users/1 \
+  -H "Authorization: Bearer <TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{"email": "updated@example.com"}'
+```
+
+**Delete User:**
+```bash
+curl -i -X DELETE http://localhost:8080/api/v1/users/1 \
+  -H "Authorization: Bearer <TOKEN>"
+```
+
+### 7. Get Products (External API)
 Fetch products from DummyJSON integration.
 ```bash
 curl -i -X GET "http://localhost:8080/api/v1/products?limit=5&page=1"
 ```
 
-### 7. Check Payment Status (gRPC)
+### 8. Check Payment Status (gRPC)
 Prerequisite: Run the dummy gRPC server first.
 ```bash
 make run-dummy-grpc

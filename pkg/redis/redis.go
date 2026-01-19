@@ -10,7 +10,9 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-func Connect(cfg config.RedisConfig) *redis.Client {
+type Client = redis.Client
+
+func Connect(cfg config.RedisConfig) *Client {
 	rdb := redis.NewClient(&redis.Options{
 		Addr:     fmt.Sprintf("%s:%s", cfg.Host, cfg.Port),
 		Password: cfg.Password,

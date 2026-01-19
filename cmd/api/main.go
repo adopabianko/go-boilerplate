@@ -84,7 +84,7 @@ func main() {
 	paymentGateway := grpcgateway.NewPaymentGateway(paymentClient)
 
 	// Initialize Usecases
-	userUsecase := usecase.NewUserUsecase(userRepo, cfg)
+	userUsecase := usecase.NewUserUsecase(userRepo, cfg, rdb)
 	productUsecase := usecase.NewProductUsecase(productGateway)
 	paymentUsecase := usecase.NewPaymentUsecase(paymentGateway)
 
