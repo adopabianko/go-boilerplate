@@ -2,6 +2,60 @@
 
 A comprehensive Go boilerplate project following Clean Architecture, featuring Gin, Gorm, RabbitMQ, Redis, PostgreSQL, and Swagger documentation.
 
+## Main Directory Structure
+
+### `/cmd`
+Main entry points of the application.
+- **/api**: Contains `main.go` which serves as the *bootstrapper* to run the API server. Dependencies (database, config, router, etc.) are initialized here.
+- **/dummy_grpc_server**: (Optional) Entry point for a dummy gRPC server if present.
+
+### `/internal`
+Contains private application code that should not be imported by external projects. This is the core of clean architecture.
+- **/config**: Module for loading application configuration (e.g., from `.env` files or environment variables).
+- **/entity**: Contains data structure definitions (Structs) representing business domain objects (e.g., `User`, `Product`) and database tables.
+- **/repository**: _Data Access Layer_. Focuses solely on database queries or data storage (SQL, Redis, etc.). Repositories implement interfaces defined for data access.
+- **/usecase**: _Business Logic Layer_. Contains the main business logic. Usecases combine data from repositories and perform validation or business processes before data is sent to the delivery layer.
+- **/delivery**: _Presentation Layer_.
+  - **/http**: Handles HTTP requests (REST API). Consists of:
+    - **handler**: Receives requests, invokes usecases, and returns JSON responses.
+    - **middleware**: Interceptor logic such as Auth, Logging, Recovery.
+    - **router**: URL route definitions and mapping to handlers.
+- **/dto**: _Data Transfer Objects_. Simple structs used to define API request (Input) and response (Output) data shapes, separating input validation from core entities.
+- **/gateway**: Clients for interacting with external services (Third-party APIs, other Microservices).
+
+### `/pkg`
+Contains public libraries or utilities that can be reused in other parts of the project (or even other projects).
+- **/auth**: Authentication utilities (JWT, Password hashing).
+- **/database**: Database connection configurations (Postgres, MySQL).
+- **/logger**: Wrapper for logging systems (e.g., Zap, Logrus).
+- **/response**: Helper for standardizing API response formats (Success/Error wrapping).
+- **/errors**: Custom error definitions.
+- **/redis**: Redis connection helper.
+- **/rabbitmq**: RabbitMQ connection helper (Message Broker).
+- **/minio**: Helper for uploading files to Object Storage (MinIO/S3).
+- **/pb**: Generated code for Protocol Buffers (gRPC).
+
+### `/api`
+Contains API contract definitions, usually OpenAPI/Swagger specification files or `.proto` files.
+
+### `/docs`
+Additional project documentation, such as architectural diagrams, technical guides, or this structure explanation.
+
+### `/migrations`
+Database schema manager. Contains SQL files to create (up) or delete (down) database tables to keep the schema synchronized across environments.
+
+## Data Flow
+
+In general, the data flow for an API request is unidirectional:
+
+1. **Incoming Request** → `Delivery (HTTP/Handler)`
+2. `Handler` calls → `Usecase`
+3. `Usecase` processes logic & calls → `Repository`
+4. `Repository` fetches data from → `Database`
+5. **Return Data** → `Repository` → `Usecase` → `Delivery` → **JSON Response**
+
+This separation ensures that changes in one layer (e.g., switching Databases) do not break other layers (e.g., Business Logic).
+
 ## Prerequisites
 
 - Go 1.22+
