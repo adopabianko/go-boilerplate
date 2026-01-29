@@ -63,8 +63,10 @@ type MinioConfig struct {
 }
 
 type JWTConfig struct {
-	SecretKey string `env:"SECRET_KEY"`
-	ExpiresIn int    `env:"EXPIRES_IN" envDefault:"24"` // in hours
+	PrivateKeyPath   string `env:"PRIVATE_KEY_PATH" envDefault:"certs/private.pem"`
+	PublicKeyPath    string `env:"PUBLIC_KEY_PATH" envDefault:"certs/public.pem"`
+	AccessExpiresIn  int    `env:"ACCESS_EXPIRES_IN" envDefault:"15"`     // in minutes
+	RefreshExpiresIn int    `env:"REFRESH_EXPIRES_IN" envDefault:"10080"` // in minutes (7 days)
 }
 
 func LoadConfig() *Config {

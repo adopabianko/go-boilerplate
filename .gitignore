@@ -31,3 +31,7 @@ Thumbs.db
 
 # Air (Live reload)
 tmp/
+
+# Security
+certs/
+*.pem

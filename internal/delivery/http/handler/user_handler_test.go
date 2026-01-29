@@ -28,9 +28,14 @@ func (m *MockUserUsecase) Register(ctx context.Context, email, password string) 
 	return args.Error(0)
 }
 
-func (m *MockUserUsecase) Login(ctx context.Context, email, password string) (string, error) {
+func (m *MockUserUsecase) Login(ctx context.Context, email, password string) (string, string, error) {
 	args := m.Called(ctx, email, password)
-	return args.String(0), args.Error(1)
+	return args.String(0), args.String(1), args.Error(2)
+}
+
+func (m *MockUserUsecase) RefreshToken(ctx context.Context, refreshToken string) (string, string, error) {
+	args := m.Called(ctx, refreshToken)
+	return args.String(0), args.String(1), args.Error(2)
 }
 
 func (m *MockUserUsecase) ListUsers(ctx context.Context, page, limit int, order string) ([]entity.User, int64, error) {
@@ -101,7 +106,7 @@ func TestUserHandler_Login(t *testing.T) {
 	}
 	body, _ := json.Marshal(reqBody)
 
-	mockUsecase.On("Login", mock.Anything, reqBody.Email, reqBody.Password).Return("token-secret", nil)
+	mockUsecase.On("Login", mock.Anything, reqBody.Email, reqBody.Password).Return("access-token", "refresh-token", nil)
 
 	req, _ := http.NewRequest("POST", "/login", bytes.NewBuffer(body))
 	w := httptest.NewRecorder()
@@ -113,7 +118,8 @@ func TestUserHandler_Login(t *testing.T) {
 	json.Unmarshal(w.Body.Bytes(), &res)
 	assert.True(t, res.Success)
 	data := res.Data.(map[string]interface{})
-	assert.Equal(t, "token-secret", data["token"])
+	assert.Equal(t, "access-token", data["access_token"])
+	assert.Equal(t, "refresh-token", data["refresh_token"])
 }
 
 func TestUserHandler_ListUsers(t *testing.T) {

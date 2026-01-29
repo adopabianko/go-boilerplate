@@ -68,13 +68,48 @@ func (h *UserHandler) Login(c *gin.Context) {
 		return
 	}
 
-	token, err := h.usecase.Login(c.Request.Context(), req.Email, req.Password)
+	accessToken, refreshToken, err := h.usecase.Login(c.Request.Context(), req.Email, req.Password)
 	if err != nil {
 		response.Error(c, err)
 		return
 	}
 
-	response.Success(c, http.StatusOK, "Login successful", gin.H{"token": token})
+	response.Success(c, http.StatusOK, "Login successful", gin.H{
+		"access_token":  accessToken,
+		"refresh_token": refreshToken,
+	})
+}
+
+// RefreshToken godoc
+// @Summary      Refresh Access Token
+// @Description  Get new access token using refresh token
+// @Tags         auth
+// @Accept       json
+// @Produce      json
+// @Param        request body dto.RefreshTokenRequest true "Refresh Token Request"
+// @Success      200  {object}  response.Response
+// @Failure      400  {object}  response.Response
+// @Failure      401  {object}  response.Response
+// @Failure      500  {object}  response.Response
+// @Router       /api/v1/auth/refresh [post]
+func (h *UserHandler) RefreshToken(c *gin.Context) {
+	var req dto.RefreshTokenRequest
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Error(c, errors.New(http.StatusBadRequest, err.Error()))
+		return
+	}
+
+	accessToken, refreshToken, err := h.usecase.RefreshToken(c.Request.Context(), req.RefreshToken)
+	if err != nil {
+		response.Error(c, err)
+		return
+	}
+
+	response.Success(c, http.StatusOK, "Token refreshed successfully", gin.H{
+		"access_token":  accessToken,
+		"refresh_token": refreshToken,
+	})
 }
 
 // ListUsers godoc

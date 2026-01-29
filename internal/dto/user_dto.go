@@ -10,6 +10,10 @@ type LoginRequest struct {
 	Password string `json:"password" binding:"required"`
 }
 
+type RefreshTokenRequest struct {
+	RefreshToken string `json:"refresh_token" binding:"required"`
+}
+
 type PaginationQuery struct {
 	Page  int    `form:"page"`
 	Limit int    `form:"limit"`

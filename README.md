@@ -81,7 +81,14 @@ This separation ensures that changes in one layer (e.g., switching Databases) do
     make docker-up
     ```
 
-4.  **Run Migrations**
+
+4.  **Generate RSA Keys**
+    Generate keys for JWT signing:
+    ```bash
+    make cert
+    ```
+
+5.  **Run Migrations**
     Initialize the database schema:
     ```bash
     make migrate-up
@@ -130,7 +137,7 @@ curl -i -X POST http://localhost:8080/api/v1/auth/register \
   }'
 ```
 
-### 3. Login User
+### 3. Login User (Get Tokens)
 ```bash
 curl -i -X POST http://localhost:8080/api/v1/auth/login \
   -H "Content-Type: application/json" \
@@ -139,13 +146,29 @@ curl -i -X POST http://localhost:8080/api/v1/auth/login \
     "password": "password123"
   }'
 ```
-*Note: Copy the `token` from the response for the following requests.*
+**Response:**
+```json
+{
+  "access_token": "ey...<SHORT_LIVED_TOKEN>...",
+  "refresh_token": "ey...<LONG_LIVED_TOKEN>..."
+}
+```
+*Note: Copy the `access_token` for authenticating requests. Use `refresh_token` to get a new access token when it expires.*
 
-### 4. List Users (Pagination)
-Replace `<TOKEN>` with the JWT token obtained from login.
+### 4. Refresh Access Token
+```bash
+curl -i -X POST http://localhost:8080/api/v1/auth/refresh \
+  -H "Content-Type: application/json" \
+  -d '{
+    "refresh_token": "<YOUR_REFRESH_TOKEN>"
+  }'
+```
+
+### 5. Access Protected API (List Users)
+Replace `<ACCESS_TOKEN>` with the token obtained from login.
 ```bash
 curl -i -X GET "http://localhost:8080/api/v1/users?page=1&limit=5&order=created_at%20desc" \
-  -H "Authorization: Bearer <TOKEN>"
+  -H "Authorization: Bearer <ACCESS_TOKEN>"
 ```
 
 ### 5. Get Current User Profile

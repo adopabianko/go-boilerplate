@@ -72,7 +72,14 @@ func TestUserUsecase_Register_Success(t *testing.T) {
 
 func TestUserUsecase_Login_Success(t *testing.T) {
 	mockRepo := new(MockUserRepository)
-	cfg := &config.Config{JWT: config.JWTConfig{SecretKey: "secret"}}
+	// Assuming tests are run from internal/usecase, we need to go up to root
+	// Assuming tests are run from internal/usecase, we need to go up to root
+	cfg := &config.Config{JWT: config.JWTConfig{
+		PrivateKeyPath:   "../../certs/private.pem",
+		PublicKeyPath:    "../../certs/public.pem",
+		AccessExpiresIn:  15,
+		RefreshExpiresIn: 10080,
+	}}
 
 	uc := usecase.NewUserUsecase(mockRepo, cfg, nil)
 
@@ -85,9 +92,10 @@ func TestUserUsecase_Login_Success(t *testing.T) {
 
 	mockRepo.On("GetByEmail", mock.Anything, "test@example.com").Return(user, nil)
 
-	token, err := uc.Login(context.Background(), "test@example.com", "password123")
+	accessToken, refreshToken, err := uc.Login(context.Background(), "test@example.com", "password123")
 	assert.NoError(t, err)
-	assert.NotEmpty(t, token)
+	assert.NotEmpty(t, accessToken)
+	assert.NotEmpty(t, refreshToken)
 	mockRepo.AssertExpectations(t)
 }
 

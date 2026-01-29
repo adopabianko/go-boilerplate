@@ -55,3 +55,8 @@ proto:
 	api/proto/payment/payment.proto
 
 
+
+cert:
+	mkdir -p certs
+	openssl genrsa -out certs/private.pem 2048
+	openssl rsa -in certs/private.pem -pubout -out certs/public.pem
