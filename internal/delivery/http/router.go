@@ -29,7 +29,7 @@ func NewRouter(
 	r.Use(gin.Recovery())
 
 	// Middlewares
-	r.Use(gin.Logger())
+	r.Use(middleware.LoggerMiddleware())
 	r.Use(middleware.RecoveryMiddleware())
 
 	// Swagger

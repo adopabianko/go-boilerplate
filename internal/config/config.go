@@ -15,6 +15,13 @@ type Config struct {
 	Minio    MinioConfig    `envPrefix:"MINIO_"`
 	JWT      JWTConfig      `envPrefix:"JWT_"`
 	External ExternalConfig `envPrefix:"EXTERNAL_"`
+	Logstash LogstashConfig `envPrefix:"LOGSTASH_"`
+}
+
+type LogstashConfig struct {
+	Host     string `env:"HOST" envDefault:"localhost"`
+	Port     string `env:"PORT" envDefault:"50000"`
+	Protocol string `env:"PROTOCOL" envDefault:"udp"`
 }
 
 type ExternalConfig struct {

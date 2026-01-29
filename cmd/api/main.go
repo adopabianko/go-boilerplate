@@ -47,12 +47,12 @@ import (
 // @name Authorization
 
 func main() {
-	// Initialize Logger
-	logger.InitLogger()
-	defer logger.Log.Sync()
-
 	// Load Config
 	cfg := config.LoadConfig()
+
+	// Initialize Logger
+	logger.InitLogger(cfg)
+	defer logger.Log.Sync()
 
 	// Initialize Database
 	db := database.Connect(cfg.Database)
