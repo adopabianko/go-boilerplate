@@ -8,14 +8,16 @@ import (
 )
 
 type Config struct {
-	App      AppConfig      `envPrefix:"APP_"`
-	Database DatabaseConfig `envPrefix:"DATABASE_"`
-	Redis    RedisConfig    `envPrefix:"REDIS_"`
-	RabbitMQ RabbitMQConfig `envPrefix:"RABBITMQ_"`
-	Minio    MinioConfig    `envPrefix:"MINIO_"`
-	JWT      JWTConfig      `envPrefix:"JWT_"`
-	External ExternalConfig `envPrefix:"EXTERNAL_"`
-	Logstash LogstashConfig `envPrefix:"LOGSTASH_"`
+	App       AppConfig       `envPrefix:"APP_"`
+	Database  DatabaseConfig  `envPrefix:"DATABASE_"`
+	Redis     RedisConfig     `envPrefix:"REDIS_"`
+	RabbitMQ  RabbitMQConfig  `envPrefix:"RABBITMQ_"`
+	Minio     MinioConfig     `envPrefix:"MINIO_"`
+	JWT       JWTConfig       `envPrefix:"JWT_"`
+	External  ExternalConfig  `envPrefix:"EXTERNAL_"`
+	Logstash  LogstashConfig  `envPrefix:"LOGSTASH_"`
+	RateLimit RateLimitConfig `envPrefix:"RATE_LIMIT_"`
+	CORS      CORSConfig      `envPrefix:"CORS_"`
 }
 
 type LogstashConfig struct {
@@ -60,6 +62,15 @@ type MinioConfig struct {
 	SecretAccessKey string `env:"SECRET_ACCESS_KEY"`
 	UseSSL          bool   `env:"USE_SSL" envDefault:"false"`
 	BucketName      string `env:"BUCKET_NAME"`
+}
+
+type RateLimitConfig struct {
+	Limit  int `env:"LIMIT" envDefault:"60"`  // Requests per window
+	Window int `env:"WINDOW" envDefault:"60"` // Window size in seconds
+}
+
+type CORSConfig struct {
+	AllowedOrigins []string `env:"ALLOWED_ORIGINS" envDefault:"*"`
 }
 
 type JWTConfig struct {

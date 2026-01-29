@@ -95,7 +95,7 @@ func main() {
 	paymentHandler := handler.NewPaymentHandler(paymentUsecase)
 
 	// Initialize Router
-	router := httpDelivery.NewRouter(cfg, userHandler, healthHandler, productHandler, paymentHandler)
+	router := httpDelivery.NewRouter(cfg, rdb, userHandler, healthHandler, productHandler, paymentHandler)
 
 	// Start Server
 	srv := &http.Server{

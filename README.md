@@ -118,6 +118,37 @@ To regenerate docs:
 make swagger
 ```
 
+## Rate Limiting
+
+The API implements a Redis-based rate limiting mechanism to prevent abuse.
+- **Default Limit**: 60 requests per minute.
+- **Headers**:
+    - `X-RateLimit-Limit`: The maximum number of requests allowed in the window.
+    - `X-RateLimit-Remaining`: The number of requests remaining in the current window.
+    - `X-RateLimit-Reset`: The Unix timestamp when the window resets.
+    - `Retry-After`: Seconds to wait before making a new request (only when limit is exceeded).
+
+**Configuration**:
+You can adjust the limit in your `.env` file:
+```env
+RATE_LIMIT_LIMIT=60    # Number of requests
+RATE_LIMIT_WINDOW=60   # Window size in seconds
+```
+
+## CORS (Cross-Origin Resource Sharing)
+
+CORS is enabled to allow requests from different origins (e.g., Frontend apps).
+- **Default**: Allows all origins (`*`) if not configured.
+- **Methods Allowed**: GET, POST, PUT, DELETE, OPTIONS, PATCH.
+
+**Configuration**:
+Set allowed origins in your `.env` file (comma-separated for future enhancements, currently supports single string or `*` logic in `config.go`, but usually we list them).
+*Note: The current implementation accepts a list of strings in `config.go`, but `env` parsing might treat comma-separated values as a slice automatically.*
+
+```env
+CORS_ALLOWED_ORIGINS=http://localhost:3000,https://mydomain.com
+```
+
 ## Testing with Curl
 
 Here are example commands to test the endpoints.

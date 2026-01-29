@@ -8,6 +8,8 @@ import (
 	"go-boilerplate/internal/delivery/http/handler"
 	"go-boilerplate/internal/delivery/http/middleware"
 
+	"go-boilerplate/pkg/redis"
+
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
@@ -15,6 +17,7 @@ import (
 
 func NewRouter(
 	cfg *config.Config,
+	rdb *redis.Client,
 	userHandler *handler.UserHandler,
 	healthHandler *handler.HealthHandler,
 	productHandler *handler.ProductHandler,
@@ -31,6 +34,7 @@ func NewRouter(
 	// Middlewares
 	r.Use(middleware.LoggerMiddleware())
 	r.Use(middleware.RecoveryMiddleware())
+	r.Use(middleware.CORSMiddleware(cfg.CORS))
 
 	// Swagger
 	docs.SwaggerInfo.BasePath = "/" // Fix fetch error
@@ -43,6 +47,7 @@ func NewRouter(
 	r.GET("/health", healthHandler.Check)
 
 	api := r.Group("/api/v1")
+	api.Use(middleware.RateLimitMiddleware(rdb, cfg.RateLimit))
 	{
 		auth := api.Group("/auth")
 		{
