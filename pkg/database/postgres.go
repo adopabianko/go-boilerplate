@@ -19,5 +19,14 @@ func Connect(cfg config.DatabaseConfig) *gorm.DB {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
 
+	sqlDB, err := db.DB()
+	if err != nil {
+		log.Fatalf("Failed to get database object: %v", err)
+	}
+
+	sqlDB.SetMaxIdleConns(cfg.MaxIdleConns)
+	sqlDB.SetMaxOpenConns(cfg.MaxOpenConns)
+	sqlDB.SetConnMaxLifetime(cfg.ConnMaxLifetime)
+
 	return db
 }

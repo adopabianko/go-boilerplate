@@ -2,6 +2,7 @@ package config
 
 import (
 	"log"
+	"time"
 
 	"github.com/caarlos0/env/v10"
 	"github.com/joho/godotenv"
@@ -37,12 +38,15 @@ type AppConfig struct {
 }
 
 type DatabaseConfig struct {
-	Host     string `env:"HOST" envDefault:"localhost"`
-	Port     string `env:"PORT" envDefault:"5432"`
-	User     string `env:"USER" envDefault:"postgres"`
-	Password string `env:"PASSWORD"`
-	Name     string `env:"NAME"`
-	SSLMode  string `env:"SSLMODE" envDefault:"disable"`
+	Host            string        `env:"HOST" envDefault:"localhost"`
+	Port            string        `env:"PORT" envDefault:"5432"`
+	User            string        `env:"USER" envDefault:"postgres"`
+	Password        string        `env:"PASSWORD"`
+	Name            string        `env:"NAME"`
+	SSLMode         string        `env:"SSLMODE" envDefault:"disable"`
+	MaxIdleConns    int           `env:"MAX_IDLE_CONNS" envDefault:"10"`
+	MaxOpenConns    int           `env:"MAX_OPEN_CONNS" envDefault:"100"`
+	ConnMaxLifetime time.Duration `env:"CONN_MAX_LIFETIME" envDefault:"1h"`
 }
 
 type RedisConfig struct {
