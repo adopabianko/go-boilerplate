@@ -8,7 +8,7 @@ import (
 	"go-boilerplate/internal/delivery/http/handler"
 	"go-boilerplate/internal/delivery/http/middleware"
 
-	"go-boilerplate/pkg/redis"
+	"go-boilerplate/internal/infrastructure/redis"
 
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"

@@ -8,10 +8,10 @@ import (
 
 	"go-boilerplate/internal/config"
 	"go-boilerplate/internal/entity"
+	"go-boilerplate/internal/infrastructure/redis"
 	"go-boilerplate/internal/repository"
 	"go-boilerplate/pkg/auth"
 	appErrors "go-boilerplate/pkg/errors"
-	"go-boilerplate/pkg/redis"
 
 	"golang.org/x/crypto/bcrypt"
 )

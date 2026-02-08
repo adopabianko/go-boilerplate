@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"go-boilerplate/internal/config"
-	"go-boilerplate/pkg/redis"
+	"go-boilerplate/internal/infrastructure/redis"
 	"go-boilerplate/pkg/response"
 
 	"github.com/gin-gonic/gin"
