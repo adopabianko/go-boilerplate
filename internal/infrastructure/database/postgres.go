@@ -24,6 +24,9 @@ func Connect(cfg config.DatabaseConfig) *pgxpool.Pool {
 	poolConfig.MinConns = int32(cfg.MaxIdleConns)
 	poolConfig.MaxConnLifetime = cfg.ConnMaxLifetime
 
+	// Add query tracer for logging SQL queries to ELK
+	poolConfig.ConnConfig.Tracer = &QueryTracer{}
+
 	var db *pgxpool.Pool
 	ctx := context.Background()
 

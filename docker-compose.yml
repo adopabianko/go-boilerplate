@@ -13,7 +13,11 @@ services:
       - minio
       - elasticsearch
       - logstash
+      - apm-server
     environment:
+      - ELASTIC_APM_SERVER_URL=http://apm-server:8200
+      - ELASTIC_APM_SERVICE_NAME=go-boilerplate
+      - ELASTIC_APM_ENVIRONMENT=development
       - WAIT_HOSTS=postgres:5432,redis:6379,rabbitmq:5672,minio:9000
       - DATABASE_HOST=postgres
       - DATABASE_PORT=5432
@@ -93,6 +97,19 @@ services:
       - ./logstash/pipeline:/usr/share/logstash/pipeline
     depends_on:
       - elasticsearch
+
+  apm-server:
+    image: docker.elastic.co/apm/apm-server:7.17.27
+    ports:
+      - "8200:8200"
+    environment:
+      - output.elasticsearch.hosts=["elasticsearch:9200"]
+      - apm-server.host=0.0.0.0:8200
+      - apm-server.kibana.enabled=true
+      - apm-server.kibana.host=kibana:5601
+    depends_on:
+      - elasticsearch
+      - kibana
 
   kibana:
     image: docker.elastic.co/kibana/kibana:7.17.27

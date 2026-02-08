@@ -19,6 +19,13 @@ type Config struct {
 	Logstash  LogstashConfig  `envPrefix:"LOGSTASH_"`
 	RateLimit RateLimitConfig `envPrefix:"RATE_LIMIT_"`
 	CORS      CORSConfig      `envPrefix:"CORS_"`
+	APM       APMConfig       `envPrefix:"ELASTIC_APM_"`
+}
+
+type APMConfig struct {
+	ServerURL   string `env:"SERVER_URL" envDefault:"http://localhost:8200"`
+	ServiceName string `env:"SERVICE_NAME" envDefault:"go-boilerplate"`
+	Environment string `env:"ENVIRONMENT" envDefault:"development"`
 }
 
 type LogstashConfig struct {

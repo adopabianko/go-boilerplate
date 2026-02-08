@@ -13,6 +13,7 @@ import (
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
+	"go.elastic.co/apm/module/apmgin/v2"
 )
 
 func NewRouter(
@@ -30,6 +31,9 @@ func NewRouter(
 
 	r := gin.New()
 	r.Use(gin.Recovery())
+
+	// APM Middleware (first for full request tracing)
+	r.Use(apmgin.Middleware(r))
 
 	// Middlewares
 	r.Use(middleware.LoggerMiddleware())
