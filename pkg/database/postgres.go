@@ -1,32 +1,48 @@
 package database
 
 import (
+	"context"
 	"fmt"
 	"log"
+	"time"
 
 	"go-boilerplate/internal/config"
 
-	"gorm.io/driver/postgres"
-	"gorm.io/gorm"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func Connect(cfg config.DatabaseConfig) *gorm.DB {
-	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=%s",
-		cfg.Host, cfg.User, cfg.Password, cfg.Name, cfg.Port, cfg.SSLMode)
+func Connect(cfg config.DatabaseConfig) *pgxpool.Pool {
+	dsn := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=%s",
+		cfg.User, cfg.Password, cfg.Host, cfg.Port, cfg.Name, cfg.SSLMode)
 
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	poolConfig, err := pgxpool.ParseConfig(dsn)
 	if err != nil {
-		log.Fatalf("Failed to connect to database: %v", err)
+		log.Fatalf("Failed to parse database config: %v", err)
 	}
 
-	sqlDB, err := db.DB()
-	if err != nil {
-		log.Fatalf("Failed to get database object: %v", err)
+	poolConfig.MaxConns = int32(cfg.MaxOpenConns)
+	poolConfig.MinConns = int32(cfg.MaxIdleConns)
+	poolConfig.MaxConnLifetime = cfg.ConnMaxLifetime
+
+	var db *pgxpool.Pool
+	ctx := context.Background()
+
+	// Retry connection loop
+	for i := 0; i < 30; i++ {
+		db, err = pgxpool.NewWithConfig(ctx, poolConfig)
+		if err == nil {
+			if err = db.Ping(ctx); err == nil {
+				break
+			}
+			db.Close()
+		}
+		log.Printf("Failed to connect to database: %v. Retrying in 2 seconds...", err)
+		time.Sleep(2 * time.Second)
 	}
 
-	sqlDB.SetMaxIdleConns(cfg.MaxIdleConns)
-	sqlDB.SetMaxOpenConns(cfg.MaxOpenConns)
-	sqlDB.SetConnMaxLifetime(cfg.ConnMaxLifetime)
+	if err != nil {
+		log.Fatalf("Failed to connect to database after retries: %v", err)
+	}
 
 	return db
 }

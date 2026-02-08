@@ -56,9 +56,11 @@ func main() {
 
 	// Initialize Database
 	db := database.Connect(cfg.Database)
+	defer db.Close()
 
 	// Initialize Redis
 	rdb := redis.Connect(cfg.Redis)
+	defer rdb.Close()
 
 	// Initialize RabbitMQ
 	mqConn := rabbitmq.Connect(cfg.RabbitMQ)
@@ -126,18 +128,6 @@ func main() {
 	defer cancel()
 	if err := srv.Shutdown(ctx); err != nil {
 		logger.Fatal("Server forced to shutdown", zap.Error(err))
-	}
-
-	// Close Database Connection
-	sqlDB, err := db.DB()
-	if err != nil {
-		logger.Error("Failed to get SQL DB for closing", zap.Error(err))
-	} else {
-		if err := sqlDB.Close(); err != nil {
-			logger.Error("Failed to close database connection", zap.Error(err))
-		} else {
-			log.Println("Database connection closed")
-		}
 	}
 
 	log.Println("Server exiting")

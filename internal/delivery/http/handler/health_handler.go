@@ -5,18 +5,18 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgx/v5/pgxpool"
 	amqp "github.com/rabbitmq/amqp091-go"
 	"github.com/redis/go-redis/v9"
-	"gorm.io/gorm"
 )
 
 type HealthHandler struct {
-	db       *gorm.DB
+	db       *pgxpool.Pool
 	rdb      *redis.Client
 	rabbitmq *amqp.Connection
 }
 
-func NewHealthHandler(db *gorm.DB, rdb *redis.Client, rabbitmq *amqp.Connection) *HealthHandler {
+func NewHealthHandler(db *pgxpool.Pool, rdb *redis.Client, rabbitmq *amqp.Connection) *HealthHandler {
 	return &HealthHandler{
 		db:       db,
 		rdb:      rdb,
@@ -50,10 +50,10 @@ func (h *HealthHandler) Check(c *gin.Context) {
 		Services:  make(map[string]ServiceStatus),
 	}
 	statusCode := http.StatusOK
+	ctx := c.Request.Context()
 
 	// Check postgres
-	sqlDB, err := h.db.DB()
-	if err != nil || sqlDB.Ping() != nil {
+	if err := h.db.Ping(ctx); err != nil {
 		response.Services["postgres"] = ServiceStatus{Status: "down", Message: "Connection failed"}
 		response.Status = "down"
 		statusCode = http.StatusServiceUnavailable
