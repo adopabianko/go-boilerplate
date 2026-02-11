@@ -7,7 +7,8 @@ services:
       - .:/app
       - /app/tmp
     depends_on:
-      - postgres
+      - postgres-master
+      - postgres-slave
       - redis
       - rabbitmq
       - minio
@@ -18,13 +19,19 @@ services:
       - ELASTIC_APM_SERVER_URL=http://apm-server:8200
       - ELASTIC_APM_SERVICE_NAME=go-boilerplate
       - ELASTIC_APM_ENVIRONMENT=development
-      - WAIT_HOSTS=postgres:5432,redis:6379,rabbitmq:5672,minio:9000
-      - DATABASE_HOST=postgres
-      - DATABASE_PORT=5432
-      - DATABASE_USER=postgres
-      - DATABASE_PASSWORD=password
-      - DATABASE_NAME=boilerplate_db
-      - DATABASE_SSLMODE=disable
+      - WAIT_HOSTS=postgres-master:5432,postgres-slave:5432,redis:6379,rabbitmq:5672,minio:9000
+      - DATABASE_MASTER_HOST=postgres-master
+      - DATABASE_MASTER_PORT=5432
+      - DATABASE_MASTER_USER=postgres
+      - DATABASE_MASTER_PASSWORD=password
+      - DATABASE_MASTER_NAME=boilerplate_db
+      - DATABASE_MASTER_SSLMODE=disable
+      - DATABASE_SLAVE_HOST=postgres-slave
+      - DATABASE_SLAVE_PORT=5432
+      - DATABASE_SLAVE_USER=postgres
+      - DATABASE_SLAVE_PASSWORD=password
+      - DATABASE_SLAVE_NAME=boilerplate_db
+      - DATABASE_SLAVE_SSLMODE=disable
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - REDIS_PASSWORD=
@@ -40,7 +47,7 @@ services:
     links:
       - logstash
 
-  postgres:
+  postgres-master:
     image: postgres:15-alpine
     environment:
       POSTGRES_USER: postgres
@@ -49,7 +56,26 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_master_data:/var/lib/postgresql/data
+      - ./docker/postgres/master/init-replication.sql:/docker-entrypoint-initdb.d/init-replication.sql
+      - ./docker/postgres/master/postgresql.conf:/etc/postgresql/postgresql.conf
+      - ./docker/postgres/master/pg_hba.conf:/etc/postgresql/pg_hba.conf
+    command: postgres -c config_file=/etc/postgresql/postgresql.conf
+
+  postgres-slave:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: boilerplate_db
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_slave_data:/var/lib/postgresql/data
+      - ./docker/postgres/slave/entrypoint.sh:/entrypoint.sh
+    entrypoint: /entrypoint.sh
+    depends_on:
+      - postgres-master
 
   redis:
     image: redis:7-alpine
@@ -119,7 +145,8 @@ services:
       - elasticsearch
 
 volumes:
-  postgres_data:
+  postgres_master_data:
+  postgres_slave_data:
   redis_data:
   minio_data:
   elasticsearch_data:

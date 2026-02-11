@@ -44,7 +44,7 @@ type AppConfig struct {
 	Mode string `env:"MODE" envDefault:"debug"`
 }
 
-type DatabaseConfig struct {
+type DBConnectionConfig struct {
 	Host            string        `env:"HOST" envDefault:"localhost"`
 	Port            string        `env:"PORT" envDefault:"5432"`
 	User            string        `env:"USER" envDefault:"postgres"`
@@ -54,6 +54,11 @@ type DatabaseConfig struct {
 	MaxIdleConns    int           `env:"MAX_IDLE_CONNS" envDefault:"10"`
 	MaxOpenConns    int           `env:"MAX_OPEN_CONNS" envDefault:"100"`
 	ConnMaxLifetime time.Duration `env:"CONN_MAX_LIFETIME" envDefault:"1h"`
+}
+
+type DatabaseConfig struct {
+	Master DBConnectionConfig `envPrefix:"MASTER_"`
+	Slave  DBConnectionConfig `envPrefix:"SLAVE_"`
 }
 
 type RedisConfig struct {

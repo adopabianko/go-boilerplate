@@ -4,19 +4,20 @@ import (
 	"net/http"
 	"time"
 
+	"go-boilerplate/internal/infrastructure/database"
+
 	"github.com/gin-gonic/gin"
-	"github.com/jackc/pgx/v5/pgxpool"
 	amqp "github.com/rabbitmq/amqp091-go"
 	"github.com/redis/go-redis/v9"
 )
 
 type HealthHandler struct {
-	db       *pgxpool.Pool
+	db       *database.Database
 	rdb      *redis.Client
 	rabbitmq *amqp.Connection
 }
 
-func NewHealthHandler(db *pgxpool.Pool, rdb *redis.Client, rabbitmq *amqp.Connection) *HealthHandler {
+func NewHealthHandler(db *database.Database, rdb *redis.Client, rabbitmq *amqp.Connection) *HealthHandler {
 	return &HealthHandler{
 		db:       db,
 		rdb:      rdb,
@@ -52,13 +53,22 @@ func (h *HealthHandler) Check(c *gin.Context) {
 	statusCode := http.StatusOK
 	ctx := c.Request.Context()
 
-	// Check postgres
-	if err := h.db.Ping(ctx); err != nil {
-		response.Services["postgres"] = ServiceStatus{Status: "down", Message: "Connection failed"}
+	// Check postgres master
+	if err := h.db.Master.Ping(ctx); err != nil {
+		response.Services["postgres_master"] = ServiceStatus{Status: "down", Message: "Connection failed"}
 		response.Status = "down"
 		statusCode = http.StatusServiceUnavailable
 	} else {
-		response.Services["postgres"] = ServiceStatus{Status: "up"}
+		response.Services["postgres_master"] = ServiceStatus{Status: "up"}
+	}
+
+	// Check postgres slave
+	if err := h.db.Slave.Ping(ctx); err != nil {
+		response.Services["postgres_slave"] = ServiceStatus{Status: "down", Message: "Connection failed"}
+		response.Status = "down"
+		statusCode = http.StatusServiceUnavailable
+	} else {
+		response.Services["postgres_slave"] = ServiceStatus{Status: "up"}
 	}
 
 	// Check Redis

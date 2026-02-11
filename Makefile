@@ -6,7 +6,7 @@ endif
 
 # Variables
 APP_NAME=go-boilerplate
-DB_URL=postgres://$(DATABASE_USER):$(DATABASE_PASSWORD)@$(DATABASE_HOST):$(DATABASE_PORT)/$(DATABASE_NAME)?sslmode=$(DATABASE_SSLMODE)
+DB_URL=postgres://$(DATABASE_MASTER_USER):$(DATABASE_MASTER_PASSWORD)@$(DATABASE_MASTER_HOST):$(DATABASE_MASTER_PORT)/$(DATABASE_MASTER_NAME)?sslmode=$(DATABASE_MASTER_SSLMODE)
 
 .PHONY: run build test clean docker-up docker-down migrate-create migrate-up migrate-down
 

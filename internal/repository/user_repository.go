@@ -6,19 +6,10 @@ import (
 	"time"
 
 	"go-boilerplate/internal/entity"
+	"go-boilerplate/internal/infrastructure/database"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgconn"
 )
-
-// DBPool matches the methods we use from pgxpool.Pool
-type DBPool interface {
-	Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)
-	QueryRow(ctx context.Context, sql string, args ...any) pgx.Row
-	Exec(ctx context.Context, sql string, args ...any) (pgconn.CommandTag, error)
-	Ping(ctx context.Context) error
-	Close()
-}
 
 type UserRepository interface {
 	Create(ctx context.Context, user *entity.User) error
@@ -30,11 +21,11 @@ type UserRepository interface {
 }
 
 type userRepository struct {
-	db DBPool
+	db *database.Database
 }
 
-// NewUserRepository accepts DBPool interface. *pgxpool.Pool implements this.
-func NewUserRepository(db DBPool) UserRepository {
+// NewUserRepository accepts *database.Database
+func NewUserRepository(db *database.Database) UserRepository {
 	return &userRepository{db: db}
 }
 
@@ -45,7 +36,8 @@ func (r *userRepository) Create(ctx context.Context, user *entity.User) error {
 	user.CreatedAt = time.Now()
 	user.UpdatedAt = time.Now()
 
-	err := r.db.QueryRow(ctx, query, user.Email, user.Password, user.CreatedAt, user.UpdatedAt).Scan(&user.ID)
+	// Master for Create
+	err := r.db.Master.QueryRow(ctx, query, user.Email, user.Password, user.CreatedAt, user.UpdatedAt).Scan(&user.ID)
 	if err != nil {
 		return fmt.Errorf("failed to create user: %w", err)
 	}
@@ -57,7 +49,8 @@ func (r *userRepository) GetByEmail(ctx context.Context, email string) (*entity.
               WHERE email = $1 AND deleted_at IS NULL`
 
 	var user entity.User
-	err := r.db.QueryRow(ctx, query, email).Scan(
+	// Slave for Read
+	err := r.db.Slave.QueryRow(ctx, query, email).Scan(
 		&user.ID, &user.Email, &user.Password, &user.CreatedAt, &user.UpdatedAt,
 	)
 	if err != nil {
@@ -81,7 +74,9 @@ func (r *userRepository) List(ctx context.Context, page, limit int, order string
 	// Count total
 	var total int64
 	countQuery := `SELECT count(*) FROM users WHERE deleted_at IS NULL`
-	if err := r.db.QueryRow(ctx, countQuery).Scan(&total); err != nil {
+	
+	// Slave for Read
+	if err := r.db.Slave.QueryRow(ctx, countQuery).Scan(&total); err != nil {
 		return nil, 0, fmt.Errorf("failed to count users: %w", err)
 	}
 
@@ -90,7 +85,8 @@ func (r *userRepository) List(ctx context.Context, page, limit int, order string
                           WHERE deleted_at IS NULL 
                           ORDER BY %s LIMIT $1 OFFSET $2`, order)
 
-	rows, err := r.db.Query(ctx, query, limit, offset)
+	// Slave for Read
+	rows, err := r.db.Slave.Query(ctx, query, limit, offset)
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to list users: %w", err)
 	}
@@ -117,7 +113,8 @@ func (r *userRepository) GetByID(ctx context.Context, id uint) (*entity.User, er
               WHERE id = $1 AND deleted_at IS NULL`
 
 	var user entity.User
-	err := r.db.QueryRow(ctx, query, id).Scan(
+	// Slave for Read
+	err := r.db.Slave.QueryRow(ctx, query, id).Scan(
 		&user.ID, &user.Email, &user.Password, &user.CreatedAt, &user.UpdatedAt,
 	)
 	if err != nil {
@@ -134,7 +131,8 @@ func (r *userRepository) Update(ctx context.Context, user *entity.User) error {
 	query := `UPDATE users SET email = $1, password = $2, updated_at = $3 
               WHERE id = $4 AND deleted_at IS NULL`
 
-	tag, err := r.db.Exec(ctx, query, user.Email, user.Password, user.UpdatedAt, user.ID)
+	// Master for Update
+	tag, err := r.db.Master.Exec(ctx, query, user.Email, user.Password, user.UpdatedAt, user.ID)
 	if err != nil {
 		return fmt.Errorf("failed to update user: %w", err)
 	}
@@ -148,7 +146,8 @@ func (r *userRepository) Delete(ctx context.Context, id uint) error {
 	deletedAt := time.Now()
 	query := `UPDATE users SET deleted_at = $1 WHERE id = $2 AND deleted_at IS NULL`
 
-	tag, err := r.db.Exec(ctx, query, deletedAt, id)
+	// Master for Delete
+	tag, err := r.db.Master.Exec(ctx, query, deletedAt, id)
 	if err != nil {
 		return fmt.Errorf("failed to delete user: %w", err)
 	}

@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"go-boilerplate/internal/infrastructure/database"
 	"github.com/jackc/pgx/v5"
 	"github.com/pashagolub/pgxmock/v4"
 	"github.com/stretchr/testify/assert"
@@ -26,7 +27,11 @@ func TestUserRepository_Create(t *testing.T) {
 	assert.NoError(t, err)
 	defer mock.Close()
 
-	repo := repository.NewUserRepository(mock)
+	db := &database.Database{
+		Master: mock,
+		Slave:  mock,
+	}
+	repo := repository.NewUserRepository(db)
 	user := &entity.User{
 		Email:    "test@example.com",
 		Password: "hashed_password",
@@ -50,7 +55,11 @@ func TestUserRepository_GetByEmail(t *testing.T) {
 	assert.NoError(t, err)
 	defer mock.Close()
 
-	repo := repository.NewUserRepository(mock)
+	db := &database.Database{
+		Master: mock,
+		Slave:  mock,
+	}
+	repo := repository.NewUserRepository(db)
 	email := "test@example.com"
 
 	const sqlSelect = `SELECT id, email, password, created_at, updated_at FROM users 
@@ -75,7 +84,11 @@ func TestUserRepository_List(t *testing.T) {
 	assert.NoError(t, err)
 	defer mock.Close()
 
-	repo := repository.NewUserRepository(mock)
+	db := &database.Database{
+		Master: mock,
+		Slave:  mock,
+	}
+	repo := repository.NewUserRepository(db)
 	page, limit := 1, 10
 	order := "created_at desc"
 
@@ -106,7 +119,11 @@ func TestUserRepository_GetByID_NotFound(t *testing.T) {
 	assert.NoError(t, err)
 	defer mock.Close()
 
-	repo := repository.NewUserRepository(mock)
+	db := &database.Database{
+		Master: mock,
+		Slave:  mock,
+	}
+	repo := repository.NewUserRepository(db)
 	id := uint(999)
 
 	const sqlSelect = `SELECT id, email, password, created_at, updated_at FROM users 
