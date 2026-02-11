@@ -1,7 +1,12 @@
+# Load .env file
+ifneq (,$(wildcard ./.env))
+    include .env
+    export
+endif
 
 # Variables
 APP_NAME=go-boilerplate
-DB_URL=postgres://postgres:password@localhost:5432/boilerplate_db?sslmode=disable
+DB_URL=postgres://$(DATABASE_USER):$(DATABASE_PASSWORD)@$(DATABASE_HOST):$(DATABASE_PORT)/$(DATABASE_NAME)?sslmode=$(DATABASE_SSLMODE)
 
 .PHONY: run build test clean docker-up docker-down migrate-create migrate-up migrate-down
 
