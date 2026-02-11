@@ -77,12 +77,12 @@ func main() {
 
 	// Payment gRPC Connection
 	// NOTE: In a real app, use a real address. connecting to localhost:50051 (dummy)
-	conn, err := grpc.Dial("localhost:50051", grpc.WithInsecure())
+	grpcConn, err := grpc.Dial("localhost:50051", grpc.WithInsecure())
 	if err != nil {
 		logger.Fatal("Failed to connect to gRPC server", zap.Error(err))
 	}
-	defer conn.Close()
-	paymentClient := pb.NewPaymentServiceClient(conn)
+	defer grpcConn.Close()
+	paymentClient := pb.NewPaymentServiceClient(grpcConn)
 	paymentGateway := grpcgateway.NewPaymentGateway(paymentClient)
 
 	// Initialize Usecases
