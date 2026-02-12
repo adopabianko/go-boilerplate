@@ -12,15 +12,14 @@ import (
 	pb "go-boilerplate/pkg/pb/payment"
 
 	"go-boilerplate/internal/config"
+	"go-boilerplate/internal/container"
 	httpDelivery "go-boilerplate/internal/delivery/http"
-	"go-boilerplate/internal/delivery/http/handler"
 	grpcgateway "go-boilerplate/internal/gateway/grpc"
 	httpgateway "go-boilerplate/internal/gateway/http"
 	"go-boilerplate/internal/infrastructure/database"
 	"go-boilerplate/internal/infrastructure/rabbitmq"
 	"go-boilerplate/internal/infrastructure/redis"
-	"go-boilerplate/internal/repository"
-	"go-boilerplate/internal/usecase"
+
 	"go-boilerplate/pkg/logger"
 
 	"go.uber.org/zap"
@@ -69,9 +68,6 @@ func main() {
 	// Initialize Minio (Optional, just ensuring it connects)
 	// minioClient := minio.Connect(cfg.Minio)
 
-	// Initialize Repositories
-	userRepo := repository.NewUserRepository(db)
-
 	// Initialize Gateways
 	productGateway := httpgateway.NewProductGateway(cfg.External.ProductAPIURL)
 
@@ -85,19 +81,11 @@ func main() {
 	paymentClient := pb.NewPaymentServiceClient(grpcConn)
 	paymentGateway := grpcgateway.NewPaymentGateway(paymentClient)
 
-	// Initialize Usecases
-	userUsecase := usecase.NewUserUsecase(userRepo, cfg, rdb)
-	productUsecase := usecase.NewProductUsecase(productGateway)
-	paymentUsecase := usecase.NewPaymentUsecase(paymentGateway)
-
-	// Initialize Handlers
-	userHandler := handler.NewUserHandler(userUsecase)
-	healthHandler := handler.NewHealthHandler(db, rdb, mqConn)
-	productHandler := handler.NewProductHandler(productUsecase)
-	paymentHandler := handler.NewPaymentHandler(paymentUsecase)
+	// Initialize Container (Repositories → Usecases → Handlers)
+	c := container.NewContainer(cfg, db, rdb, mqConn, productGateway, paymentGateway)
 
 	// Initialize Router
-	router := httpDelivery.NewRouter(cfg, rdb, userHandler, healthHandler, productHandler, paymentHandler)
+	router := httpDelivery.NewRouter(cfg, rdb, c)
 
 	// Start Server
 	srv := &http.Server{

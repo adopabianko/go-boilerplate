@@ -5,7 +5,7 @@ import (
 
 	"go-boilerplate/docs"
 	"go-boilerplate/internal/config"
-	"go-boilerplate/internal/delivery/http/handler"
+	"go-boilerplate/internal/container"
 	"go-boilerplate/internal/delivery/http/middleware"
 
 	"go-boilerplate/internal/infrastructure/redis"
@@ -19,11 +19,13 @@ import (
 func NewRouter(
 	cfg *config.Config,
 	rdb *redis.Client,
-	userHandler *handler.UserHandler,
-	healthHandler *handler.HealthHandler,
-	productHandler *handler.ProductHandler,
-	paymentHandler *handler.PaymentHandler,
+	c *container.Container,
 ) *gin.Engine {
+	// Extract handlers from container
+	userHandler := c.UserHandler
+	healthHandler := c.HealthHandler
+	productHandler := c.ProductHandler
+	paymentHandler := c.PaymentHandler
 	// Gin Mode
 	if cfg.App.Mode == "release" {
 		gin.SetMode(gin.ReleaseMode)
