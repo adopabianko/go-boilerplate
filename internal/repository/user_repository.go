@@ -7,6 +7,7 @@ import (
 
 	"go-boilerplate/internal/entity"
 	"go-boilerplate/internal/infrastructure/database"
+	"go-boilerplate/pkg/tracer"
 
 	"github.com/jackc/pgx/v5"
 )
@@ -30,6 +31,9 @@ func NewUserRepository(db *database.Database) UserRepository {
 }
 
 func (r *userRepository) Create(ctx context.Context, user *entity.User) error {
+	ctx, span := tracer.StartSpan(ctx, "UserRepository.Create", "repository")
+	defer span.End()
+
 	query := `INSERT INTO users (email, password, created_at, updated_at) 
               VALUES ($1, $2, $3, $4) RETURNING id`
 
@@ -45,6 +49,9 @@ func (r *userRepository) Create(ctx context.Context, user *entity.User) error {
 }
 
 func (r *userRepository) GetByEmail(ctx context.Context, email string) (*entity.User, error) {
+	ctx, span := tracer.StartSpan(ctx, "UserRepository.GetByEmail", "repository")
+	defer span.End()
+
 	query := `SELECT id, email, password, created_at, updated_at FROM users 
               WHERE email = $1 AND deleted_at IS NULL`
 
@@ -63,6 +70,9 @@ func (r *userRepository) GetByEmail(ctx context.Context, email string) (*entity.
 }
 
 func (r *userRepository) List(ctx context.Context, page, limit int, order string) ([]entity.User, int64, error) {
+	ctx, span := tracer.StartSpan(ctx, "UserRepository.List", "repository")
+	defer span.End()
+
 	if order == "" {
 		order = "created_at desc"
 	}
@@ -109,6 +119,9 @@ func (r *userRepository) List(ctx context.Context, page, limit int, order string
 }
 
 func (r *userRepository) GetByID(ctx context.Context, id uint) (*entity.User, error) {
+	ctx, span := tracer.StartSpan(ctx, "UserRepository.GetByID", "repository")
+	defer span.End()
+
 	query := `SELECT id, email, password, created_at, updated_at FROM users 
               WHERE id = $1 AND deleted_at IS NULL`
 
@@ -127,6 +140,9 @@ func (r *userRepository) GetByID(ctx context.Context, id uint) (*entity.User, er
 }
 
 func (r *userRepository) Update(ctx context.Context, user *entity.User) error {
+	ctx, span := tracer.StartSpan(ctx, "UserRepository.Update", "repository")
+	defer span.End()
+
 	user.UpdatedAt = time.Now()
 	query := `UPDATE users SET email = $1, password = $2, updated_at = $3 
               WHERE id = $4 AND deleted_at IS NULL`
@@ -143,6 +159,9 @@ func (r *userRepository) Update(ctx context.Context, user *entity.User) error {
 }
 
 func (r *userRepository) Delete(ctx context.Context, id uint) error {
+	ctx, span := tracer.StartSpan(ctx, "UserRepository.Delete", "repository")
+	defer span.End()
+
 	deletedAt := time.Now()
 	query := `UPDATE users SET deleted_at = $1 WHERE id = $2 AND deleted_at IS NULL`
 
@@ -156,3 +175,4 @@ func (r *userRepository) Delete(ctx context.Context, id uint) error {
 	}
 	return nil
 }
+

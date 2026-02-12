@@ -17,6 +17,8 @@ require (
 	github.com/swaggo/files v1.0.1
 	github.com/swaggo/gin-swagger v1.6.1
 	github.com/swaggo/swag v1.16.6
+	go.elastic.co/apm/module/apmgin/v2 v2.7.3
+	go.elastic.co/apm/v2 v2.7.3
 	go.uber.org/zap v1.27.1
 	golang.org/x/crypto v0.47.0
 	google.golang.org/grpc v1.78.0
@@ -81,9 +83,7 @@ require (
 	github.com/tinylib/msgp v1.6.3 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/ugorji/go/codec v1.3.1 // indirect
-	go.elastic.co/apm/module/apmgin/v2 v2.7.3 // indirect
 	go.elastic.co/apm/module/apmhttp/v2 v2.7.3 // indirect
-	go.elastic.co/apm/v2 v2.7.3 // indirect
 	go.elastic.co/fastjson v1.5.1 // indirect
 	go.uber.org/mock v0.6.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect

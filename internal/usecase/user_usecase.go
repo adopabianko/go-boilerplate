@@ -12,6 +12,7 @@ import (
 	"go-boilerplate/internal/repository"
 	"go-boilerplate/pkg/auth"
 	appErrors "go-boilerplate/pkg/errors"
+	"go-boilerplate/pkg/tracer"
 
 	"golang.org/x/crypto/bcrypt"
 )
@@ -37,6 +38,9 @@ func NewUserUsecase(repo repository.UserRepository, cfg *config.Config, rdb *red
 }
 
 func (u *userUsecase) Register(ctx context.Context, email, password string) error {
+	ctx, span := tracer.StartSpan(ctx, "UserUsecase.Register", "usecase")
+	defer span.End()
+
 	existingUser, _ := u.repo.GetByEmail(ctx, email)
 	if existingUser != nil {
 		return appErrors.New(400, "Email already exists")
@@ -60,6 +64,9 @@ func (u *userUsecase) Register(ctx context.Context, email, password string) erro
 }
 
 func (u *userUsecase) Login(ctx context.Context, email, password string) (string, string, error) {
+	ctx, span := tracer.StartSpan(ctx, "UserUsecase.Login", "usecase")
+	defer span.End()
+
 	user, err := u.repo.GetByEmail(ctx, email)
 	if err != nil {
 		return "", "", appErrors.New(401, "Invalid credentials")
@@ -78,6 +85,9 @@ func (u *userUsecase) Login(ctx context.Context, email, password string) (string
 }
 
 func (u *userUsecase) RefreshToken(ctx context.Context, tokenString string) (string, string, error) {
+	ctx, span := tracer.StartSpan(ctx, "UserUsecase.RefreshToken", "usecase")
+	defer span.End()
+
 	claims, err := auth.ValidateRefreshToken(tokenString, u.config.JWT)
 	if err != nil {
 		return "", "", appErrors.New(401, "Invalid refresh token")
@@ -98,6 +108,9 @@ func (u *userUsecase) RefreshToken(ctx context.Context, tokenString string) (str
 }
 
 func (u *userUsecase) ListUsers(ctx context.Context, page, limit int, order string) ([]entity.User, int64, error) {
+	ctx, span := tracer.StartSpan(ctx, "UserUsecase.ListUsers", "usecase")
+	defer span.End()
+
 	if page <= 0 {
 		page = 1
 	}
@@ -117,6 +130,9 @@ func (u *userUsecase) ListUsers(ctx context.Context, page, limit int, order stri
 }
 
 func (u *userUsecase) GetUser(ctx context.Context, id uint) (*entity.User, error) {
+	ctx, span := tracer.StartSpan(ctx, "UserUsecase.GetUser", "usecase")
+	defer span.End()
+
 	// Check Redis Cache
 	cacheKey := fmt.Sprintf("user:%d", id)
 	cachedUser, err := u.redis.Get(ctx, cacheKey).Result()
@@ -141,6 +157,9 @@ func (u *userUsecase) GetUser(ctx context.Context, id uint) (*entity.User, error
 }
 
 func (u *userUsecase) UpdateUser(ctx context.Context, id uint, email string) error {
+	ctx, span := tracer.StartSpan(ctx, "UserUsecase.UpdateUser", "usecase")
+	defer span.End()
+
 	user, err := u.repo.GetByID(ctx, id)
 	if err != nil {
 		return appErrors.Wrap(err, 404, "User not found")
@@ -159,6 +178,9 @@ func (u *userUsecase) UpdateUser(ctx context.Context, id uint, email string) err
 }
 
 func (u *userUsecase) DeleteUser(ctx context.Context, id uint) error {
+	ctx, span := tracer.StartSpan(ctx, "UserUsecase.DeleteUser", "usecase")
+	defer span.End()
+
 	if err := u.repo.Delete(ctx, id); err != nil {
 		return appErrors.Wrap(err, 500, "Failed to delete user")
 	}
@@ -169,3 +191,4 @@ func (u *userUsecase) DeleteUser(ctx context.Context, id uint) error {
 
 	return nil
 }
+

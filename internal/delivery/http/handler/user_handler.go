@@ -4,13 +4,13 @@ import (
 	"net/http"
 	"strconv"
 
+	"go-boilerplate/internal/dto"
 	"go-boilerplate/internal/usecase"
 	"go-boilerplate/pkg/errors"
 	"go-boilerplate/pkg/response"
+	"go-boilerplate/pkg/tracer"
 
 	"github.com/gin-gonic/gin"
-
-	"go-boilerplate/internal/dto"
 )
 
 type UserHandler struct {
@@ -33,6 +33,9 @@ func NewUserHandler(u usecase.UserUsecase) *UserHandler {
 // @Failure      500  {object}  response.Response
 // @Router       /api/v1/auth/register [post]
 func (h *UserHandler) Register(c *gin.Context) {
+	ctx, span := tracer.StartSpan(c.Request.Context(), "UserHandler.Register", "handler")
+	defer span.End()
+
 	var req dto.RegisterRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -40,7 +43,7 @@ func (h *UserHandler) Register(c *gin.Context) {
 		return
 	}
 
-	if err := h.usecase.Register(c.Request.Context(), req.Email, req.Password); err != nil {
+	if err := h.usecase.Register(ctx, req.Email, req.Password); err != nil {
 		response.Error(c, err)
 		return
 	}
@@ -61,6 +64,9 @@ func (h *UserHandler) Register(c *gin.Context) {
 // @Failure      500  {object}  response.Response
 // @Router       /api/v1/auth/login [post]
 func (h *UserHandler) Login(c *gin.Context) {
+	ctx, span := tracer.StartSpan(c.Request.Context(), "UserHandler.Login", "handler")
+	defer span.End()
+
 	var req dto.LoginRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -68,7 +74,7 @@ func (h *UserHandler) Login(c *gin.Context) {
 		return
 	}
 
-	accessToken, refreshToken, err := h.usecase.Login(c.Request.Context(), req.Email, req.Password)
+	accessToken, refreshToken, err := h.usecase.Login(ctx, req.Email, req.Password)
 	if err != nil {
 		response.Error(c, err)
 		return
@@ -93,6 +99,9 @@ func (h *UserHandler) Login(c *gin.Context) {
 // @Failure      500  {object}  response.Response
 // @Router       /api/v1/auth/refresh [post]
 func (h *UserHandler) RefreshToken(c *gin.Context) {
+	ctx, span := tracer.StartSpan(c.Request.Context(), "UserHandler.RefreshToken", "handler")
+	defer span.End()
+
 	var req dto.RefreshTokenRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -100,7 +109,7 @@ func (h *UserHandler) RefreshToken(c *gin.Context) {
 		return
 	}
 
-	accessToken, refreshToken, err := h.usecase.RefreshToken(c.Request.Context(), req.RefreshToken)
+	accessToken, refreshToken, err := h.usecase.RefreshToken(ctx, req.RefreshToken)
 	if err != nil {
 		response.Error(c, err)
 		return
@@ -126,6 +135,9 @@ func (h *UserHandler) RefreshToken(c *gin.Context) {
 // @Security     BearerAuth
 // @Router       /api/v1/users [get]
 func (h *UserHandler) ListUsers(c *gin.Context) {
+	ctx, span := tracer.StartSpan(c.Request.Context(), "UserHandler.ListUsers", "handler")
+	defer span.End()
+
 	// Default values
 	page := 1
 	limit := 10
@@ -144,7 +156,7 @@ func (h *UserHandler) ListUsers(c *gin.Context) {
 		}
 	}
 
-	users, total, err := h.usecase.ListUsers(c.Request.Context(), page, limit, order)
+	users, total, err := h.usecase.ListUsers(ctx, page, limit, order)
 	if err != nil {
 		response.Error(c, err)
 		return
@@ -172,6 +184,9 @@ func (h *UserHandler) ListUsers(c *gin.Context) {
 // @Failure      404  {object}  response.Response
 // @Router       /api/v1/users/{id} [get]
 func (h *UserHandler) GetUser(c *gin.Context) {
+	ctx, span := tracer.StartSpan(c.Request.Context(), "UserHandler.GetUser", "handler")
+	defer span.End()
+
 	idStr := c.Param("id")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
@@ -179,7 +194,7 @@ func (h *UserHandler) GetUser(c *gin.Context) {
 		return
 	}
 
-	user, err := h.usecase.GetUser(c.Request.Context(), uint(id))
+	user, err := h.usecase.GetUser(ctx, uint(id))
 	if err != nil {
 		response.Error(c, err)
 		return
@@ -199,6 +214,9 @@ func (h *UserHandler) GetUser(c *gin.Context) {
 // @Failure      500  {object}  response.Response
 // @Router       /api/v1/users/{id} [put]
 func (h *UserHandler) UpdateUser(c *gin.Context) {
+	ctx, span := tracer.StartSpan(c.Request.Context(), "UserHandler.UpdateUser", "handler")
+	defer span.End()
+
 	idStr := c.Param("id")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
@@ -212,7 +230,7 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 		return
 	}
 
-	if err := h.usecase.UpdateUser(c.Request.Context(), uint(id), req.Email); err != nil {
+	if err := h.usecase.UpdateUser(ctx, uint(id), req.Email); err != nil {
 		response.Error(c, err)
 		return
 	}
@@ -230,6 +248,9 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 // @Failure      500  {object}  response.Response
 // @Router       /api/v1/users/{id} [delete]
 func (h *UserHandler) DeleteUser(c *gin.Context) {
+	ctx, span := tracer.StartSpan(c.Request.Context(), "UserHandler.DeleteUser", "handler")
+	defer span.End()
+
 	idStr := c.Param("id")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
@@ -237,7 +258,7 @@ func (h *UserHandler) DeleteUser(c *gin.Context) {
 		return
 	}
 
-	if err := h.usecase.DeleteUser(c.Request.Context(), uint(id)); err != nil {
+	if err := h.usecase.DeleteUser(ctx, uint(id)); err != nil {
 		response.Error(c, err)
 		return
 	}
