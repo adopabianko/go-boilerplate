@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"go-boilerplate/internal/infrastructure/database"
+
 	"github.com/jackc/pgx/v5"
 	"github.com/pashagolub/pgxmock/v4"
 	"github.com/stretchr/testify/assert"
@@ -37,16 +38,20 @@ func TestUserRepository_Create(t *testing.T) {
 		Password: "hashed_password",
 	}
 
-	const sqlInsert = `INSERT INTO users (email, password, created_at, updated_at) 
-              VALUES ($1, $2, $3, $4) RETURNING id`
+	const sqlInsert = `INSERT INTO users (email, password) 
+              VALUES ($1, $2) RETURNING id, created_at AT TIME ZONE 'UTC' AT TIME ZONE 'UTC', updated_at AT TIME ZONE 'UTC' AT TIME ZONE 'UTC'`
 
+	now := time.Now()
 	mock.ExpectQuery(regexp.QuoteMeta(sqlInsert)).
-		WithArgs(user.Email, user.Password, pgxmock.AnyArg(), pgxmock.AnyArg()).
-		WillReturnRows(pgxmock.NewRows([]string{"id"}).AddRow(uint(1)))
+		WithArgs(user.Email, user.Password).
+		WillReturnRows(pgxmock.NewRows([]string{"id", "created_at", "updated_at"}).
+			AddRow("019c514b-a933-74f2-8d08-a496675c66cf", now, now))
 
-	err = repo.Create(context.Background(), user)
+	err = repo.Create(context.Background(), user, "UTC")
 	assert.NoError(t, err)
-	assert.Equal(t, uint(1), user.ID)
+	assert.Equal(t, "019c514b-a933-74f2-8d08-a496675c66cf", user.ID)
+	assert.False(t, user.CreatedAt.IsZero())
+	assert.False(t, user.UpdatedAt.IsZero())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -62,17 +67,17 @@ func TestUserRepository_GetByEmail(t *testing.T) {
 	repo := repository.NewUserRepository(db)
 	email := "test@example.com"
 
-	const sqlSelect = `SELECT id, email, password, created_at, updated_at FROM users 
+	const sqlSelect = `SELECT id, email, password, created_at AT TIME ZONE 'UTC' AT TIME ZONE 'UTC', updated_at AT TIME ZONE 'UTC' AT TIME ZONE 'UTC' FROM users 
               WHERE email = $1 AND deleted_at IS NULL`
 
 	rows := pgxmock.NewRows([]string{"id", "email", "password", "created_at", "updated_at"}).
-		AddRow(uint(1), email, "hashed_password", time.Now(), time.Now())
+		AddRow("019c514b-a933-74f2-8d08-a496675c66cf", email, "hashed_password", time.Now(), time.Now())
 
 	mock.ExpectQuery(regexp.QuoteMeta(sqlSelect)).
 		WithArgs(email).
 		WillReturnRows(rows)
 
-	user, err := repo.GetByEmail(context.Background(), email)
+	user, err := repo.GetByEmail(context.Background(), email, "UTC")
 	assert.NoError(t, err)
 	assert.NotNil(t, user)
 	assert.Equal(t, email, user.Email)
@@ -98,16 +103,16 @@ func TestUserRepository_List(t *testing.T) {
 
 	// List query
 	rows := pgxmock.NewRows([]string{"id", "email", "created_at", "updated_at"}).
-		AddRow(uint(1), "u1@example.com", time.Now(), time.Now()).
-		AddRow(uint(2), "u2@example.com", time.Now(), time.Now())
+		AddRow("019c514b-a933-74f2-8d08-a496675c66cf", "u1@example.com", time.Now(), time.Now()).
+		AddRow("019c514b-a933-74f2-8d08-a496675c66d0", "u2@example.com", time.Now(), time.Now())
 
-	mock.ExpectQuery(regexp.QuoteMeta(`SELECT id, email, created_at, updated_at FROM users 
+	mock.ExpectQuery(regexp.QuoteMeta(`SELECT id, email, created_at AT TIME ZONE 'UTC' AT TIME ZONE 'UTC', updated_at AT TIME ZONE 'UTC' AT TIME ZONE 'UTC' FROM users 
                           WHERE deleted_at IS NULL 
                           ORDER BY created_at desc LIMIT $1 OFFSET $2`)).
 		WithArgs(limit, 0).
 		WillReturnRows(rows)
 
-	users, total, err := repo.List(context.Background(), page, limit, order)
+	users, total, err := repo.List(context.Background(), page, limit, order, "UTC")
 	assert.NoError(t, err)
 	assert.Equal(t, int64(2), total)
 	assert.Len(t, users, 2)
@@ -124,16 +129,16 @@ func TestUserRepository_GetByID_NotFound(t *testing.T) {
 		Slave:  mock,
 	}
 	repo := repository.NewUserRepository(db)
-	id := uint(999)
+	id := "019c514b-a933-74f2-8d08-a496675c66cf"
 
-	const sqlSelect = `SELECT id, email, password, created_at, updated_at FROM users 
+	const sqlSelect = `SELECT id, email, password, created_at AT TIME ZONE 'UTC' AT TIME ZONE 'UTC', updated_at AT TIME ZONE 'UTC' AT TIME ZONE 'UTC' FROM users 
               WHERE id = $1 AND deleted_at IS NULL`
 
 	mock.ExpectQuery(regexp.QuoteMeta(sqlSelect)).
 		WithArgs(id).
 		WillReturnError(pgx.ErrNoRows)
 
-	user, err := repo.GetByID(context.Background(), id)
+	user, err := repo.GetByID(context.Background(), id, "UTC")
 	assert.Error(t, err)
 	assert.Nil(t, user)
 	assert.Contains(t, err.Error(), "user not found")

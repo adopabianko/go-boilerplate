@@ -13,12 +13,12 @@ import (
 )
 
 type UserRepository interface {
-	Create(ctx context.Context, user *entity.User) error
-	GetByEmail(ctx context.Context, email string) (*entity.User, error)
-	List(ctx context.Context, page, limit int, order string) ([]entity.User, int64, error)
-	GetByID(ctx context.Context, id uint) (*entity.User, error)
-	Update(ctx context.Context, user *entity.User) error
-	Delete(ctx context.Context, id uint) error
+	Create(ctx context.Context, user *entity.User, timezone string) error
+	GetByEmail(ctx context.Context, email string, timezone string) (*entity.User, error)
+	List(ctx context.Context, page, limit int, order string, timezone string) ([]entity.User, int64, error)
+	GetByID(ctx context.Context, id string, timezone string) (*entity.User, error)
+	Update(ctx context.Context, user *entity.User, timezone string) error
+	Delete(ctx context.Context, id string) error
 }
 
 type userRepository struct {
@@ -30,30 +30,35 @@ func NewUserRepository(db *database.Database) UserRepository {
 	return &userRepository{db: db}
 }
 
-func (r *userRepository) Create(ctx context.Context, user *entity.User) error {
+func (r *userRepository) Create(ctx context.Context, user *entity.User, timezone string) error {
 	ctx, span := tracer.StartSpan(ctx, "UserRepository.Create", "repository")
 	defer span.End()
 
-	query := `INSERT INTO users (email, password, created_at, updated_at) 
-              VALUES ($1, $2, $3, $4) RETURNING id`
+	if timezone == "" {
+		timezone = "UTC"
+	}
 
-	user.CreatedAt = time.Now()
-	user.UpdatedAt = time.Now()
+	query := fmt.Sprintf(`INSERT INTO users (email, password) 
+              VALUES ($1, $2) RETURNING id, created_at AT TIME ZONE 'UTC' AT TIME ZONE '%s', updated_at AT TIME ZONE 'UTC' AT TIME ZONE '%s'`, timezone, timezone)
 
 	// Master for Create
-	err := r.db.Master.QueryRow(ctx, query, user.Email, user.Password, user.CreatedAt, user.UpdatedAt).Scan(&user.ID)
+	err := r.db.Master.QueryRow(ctx, query, user.Email, user.Password).Scan(&user.ID, &user.CreatedAt, &user.UpdatedAt)
 	if err != nil {
 		return fmt.Errorf("failed to create user: %w", err)
 	}
 	return nil
 }
 
-func (r *userRepository) GetByEmail(ctx context.Context, email string) (*entity.User, error) {
+func (r *userRepository) GetByEmail(ctx context.Context, email string, timezone string) (*entity.User, error) {
 	ctx, span := tracer.StartSpan(ctx, "UserRepository.GetByEmail", "repository")
 	defer span.End()
 
-	query := `SELECT id, email, password, created_at, updated_at FROM users 
-              WHERE email = $1 AND deleted_at IS NULL`
+	if timezone == "" {
+		timezone = "UTC"
+	}
+
+	query := fmt.Sprintf(`SELECT id, email, password, created_at AT TIME ZONE 'UTC' AT TIME ZONE '%s', updated_at AT TIME ZONE 'UTC' AT TIME ZONE '%s' FROM users 
+              WHERE email = $1 AND deleted_at IS NULL`, timezone, timezone)
 
 	var user entity.User
 	// Slave for Read
@@ -69,9 +74,13 @@ func (r *userRepository) GetByEmail(ctx context.Context, email string) (*entity.
 	return &user, nil
 }
 
-func (r *userRepository) List(ctx context.Context, page, limit int, order string) ([]entity.User, int64, error) {
+func (r *userRepository) List(ctx context.Context, page, limit int, order string, timezone string) ([]entity.User, int64, error) {
 	ctx, span := tracer.StartSpan(ctx, "UserRepository.List", "repository")
 	defer span.End()
+
+	if timezone == "" {
+		timezone = "UTC"
+	}
 
 	if order == "" {
 		order = "created_at desc"
@@ -84,16 +93,16 @@ func (r *userRepository) List(ctx context.Context, page, limit int, order string
 	// Count total
 	var total int64
 	countQuery := `SELECT count(*) FROM users WHERE deleted_at IS NULL`
-	
+
 	// Slave for Read
 	if err := r.db.Slave.QueryRow(ctx, countQuery).Scan(&total); err != nil {
 		return nil, 0, fmt.Errorf("failed to count users: %w", err)
 	}
 
 	// List users
-	query := fmt.Sprintf(`SELECT id, email, created_at, updated_at FROM users 
+	query := fmt.Sprintf(`SELECT id, email, created_at AT TIME ZONE 'UTC' AT TIME ZONE '%s', updated_at AT TIME ZONE 'UTC' AT TIME ZONE '%s' FROM users 
                           WHERE deleted_at IS NULL 
-                          ORDER BY %s LIMIT $1 OFFSET $2`, order)
+                          ORDER BY %s LIMIT $1 OFFSET $2`, timezone, timezone, order)
 
 	// Slave for Read
 	rows, err := r.db.Slave.Query(ctx, query, limit, offset)
@@ -118,12 +127,16 @@ func (r *userRepository) List(ctx context.Context, page, limit int, order string
 	return users, total, nil
 }
 
-func (r *userRepository) GetByID(ctx context.Context, id uint) (*entity.User, error) {
+func (r *userRepository) GetByID(ctx context.Context, id string, timezone string) (*entity.User, error) {
 	ctx, span := tracer.StartSpan(ctx, "UserRepository.GetByID", "repository")
 	defer span.End()
 
-	query := `SELECT id, email, password, created_at, updated_at FROM users 
-              WHERE id = $1 AND deleted_at IS NULL`
+	if timezone == "" {
+		timezone = "UTC"
+	}
+
+	query := fmt.Sprintf(`SELECT id, email, password, created_at AT TIME ZONE 'UTC' AT TIME ZONE '%s', updated_at AT TIME ZONE 'UTC' AT TIME ZONE '%s' FROM users 
+              WHERE id = $1 AND deleted_at IS NULL`, timezone, timezone)
 
 	var user entity.User
 	// Slave for Read
@@ -139,26 +152,29 @@ func (r *userRepository) GetByID(ctx context.Context, id uint) (*entity.User, er
 	return &user, nil
 }
 
-func (r *userRepository) Update(ctx context.Context, user *entity.User) error {
+func (r *userRepository) Update(ctx context.Context, user *entity.User, timezone string) error {
 	ctx, span := tracer.StartSpan(ctx, "UserRepository.Update", "repository")
 	defer span.End()
 
-	user.UpdatedAt = time.Now()
-	query := `UPDATE users SET email = $1, password = $2, updated_at = $3 
-              WHERE id = $4 AND deleted_at IS NULL`
+	if timezone == "" {
+		timezone = "UTC"
+	}
+
+	query := fmt.Sprintf(`UPDATE users SET email = $1, password = $2, updated_at = CURRENT_TIMESTAMP 
+              WHERE id = $3 AND deleted_at IS NULL RETURNING updated_at AT TIME ZONE 'UTC' AT TIME ZONE '%s'`, timezone)
 
 	// Master for Update
-	tag, err := r.db.Master.Exec(ctx, query, user.Email, user.Password, user.UpdatedAt, user.ID)
+	err := r.db.Master.QueryRow(ctx, query, user.Email, user.Password, user.ID).Scan(&user.UpdatedAt)
 	if err != nil {
+		if err == pgx.ErrNoRows {
+			return fmt.Errorf("user not found or deleted")
+		}
 		return fmt.Errorf("failed to update user: %w", err)
-	}
-	if tag.RowsAffected() == 0 {
-		return fmt.Errorf("user not found or deleted")
 	}
 	return nil
 }
 
-func (r *userRepository) Delete(ctx context.Context, id uint) error {
+func (r *userRepository) Delete(ctx context.Context, id string) error {
 	ctx, span := tracer.StartSpan(ctx, "UserRepository.Delete", "repository")
 	defer span.End()
 
@@ -175,4 +191,3 @@ func (r *userRepository) Delete(ctx context.Context, id uint) error {
 	}
 	return nil
 }
-

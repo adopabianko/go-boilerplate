@@ -2,11 +2,11 @@ package handler
 
 import (
 	"net/http"
-	"strconv"
 
 	"go-boilerplate/internal/dto"
 	"go-boilerplate/internal/usecase"
 	"go-boilerplate/pkg/errors"
+	"go-boilerplate/pkg/request"
 	"go-boilerplate/pkg/response"
 	"go-boilerplate/pkg/tracer"
 
@@ -43,7 +43,8 @@ func (h *UserHandler) Register(c *gin.Context) {
 		return
 	}
 
-	if err := h.usecase.Register(ctx, req.Email, req.Password); err != nil {
+	tz := request.GetTimeLocation(c)
+	if err := h.usecase.Register(ctx, req.Email, req.Password, tz); err != nil {
 		response.Error(c, err)
 		return
 	}
@@ -156,10 +157,21 @@ func (h *UserHandler) ListUsers(c *gin.Context) {
 		}
 	}
 
-	users, total, err := h.usecase.ListUsers(ctx, page, limit, order)
+	tz := request.GetTimeLocation(c)
+	users, total, err := h.usecase.ListUsers(ctx, page, limit, order, tz)
 	if err != nil {
 		response.Error(c, err)
 		return
+	}
+
+	userResponses := make([]dto.UserResponse, len(users))
+	for i, u := range users {
+		userResponses[i] = dto.UserResponse{
+			ID:        u.ID,
+			Email:     u.Email,
+			CreatedAt: u.CreatedAt,
+			UpdatedAt: u.UpdatedAt,
+		}
 	}
 
 	offset := (page - 1) * limit
@@ -171,7 +183,7 @@ func (h *UserHandler) ListUsers(c *gin.Context) {
 		Order:  order,
 	}
 
-	response.SuccessWithPagination(c, http.StatusOK, "User list", users, meta)
+	response.SuccessWithPagination(c, http.StatusOK, "User list", userResponses, meta)
 }
 
 // GetUser godoc
@@ -188,19 +200,26 @@ func (h *UserHandler) GetUser(c *gin.Context) {
 	defer span.End()
 
 	idStr := c.Param("id")
-	id, err := strconv.Atoi(idStr)
-	if err != nil {
+	if idStr == "" {
 		response.Error(c, errors.New(http.StatusBadRequest, "Invalid User ID"))
 		return
 	}
 
-	user, err := h.usecase.GetUser(ctx, uint(id))
+	tz := request.GetTimeLocation(c)
+	user, err := h.usecase.GetUser(ctx, idStr, tz)
 	if err != nil {
 		response.Error(c, err)
 		return
 	}
 
-	response.Success(c, http.StatusOK, "User retrieved successfully", user)
+	userResponse := dto.UserResponse{
+		ID:        user.ID,
+		Email:     user.Email,
+		CreatedAt: user.CreatedAt,
+		UpdatedAt: user.UpdatedAt,
+	}
+
+	response.Success(c, http.StatusOK, "User retrieved successfully", userResponse)
 }
 
 // UpdateUser godoc
@@ -218,8 +237,7 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 	defer span.End()
 
 	idStr := c.Param("id")
-	id, err := strconv.Atoi(idStr)
-	if err != nil {
+	if idStr == "" {
 		response.Error(c, errors.New(http.StatusBadRequest, "Invalid User ID"))
 		return
 	}
@@ -230,7 +248,8 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 		return
 	}
 
-	if err := h.usecase.UpdateUser(ctx, uint(id), req.Email); err != nil {
+	tz := request.GetTimeLocation(c)
+	if err := h.usecase.UpdateUser(ctx, idStr, req.Email, tz); err != nil {
 		response.Error(c, err)
 		return
 	}
@@ -252,16 +271,16 @@ func (h *UserHandler) DeleteUser(c *gin.Context) {
 	defer span.End()
 
 	idStr := c.Param("id")
-	id, err := strconv.Atoi(idStr)
-	if err != nil {
+	if idStr == "" {
 		response.Error(c, errors.New(http.StatusBadRequest, "Invalid User ID"))
 		return
 	}
 
-	if err := h.usecase.DeleteUser(ctx, uint(id)); err != nil {
+	if err := h.usecase.DeleteUser(ctx, idStr); err != nil {
 		response.Error(c, err)
 		return
 	}
 
 	response.Success(c, http.StatusOK, "User deleted successfully", nil)
 }
+

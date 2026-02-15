@@ -28,11 +28,16 @@ test:
 clean:
 	rm -rf tmp
 
-docker-up:
-	docker compose up -d
-
-docker-down:
-	docker compose down
+build-local:
+	docker compose -f docker-compose.local.yml build
+run-local:
+	docker compose -f docker-compose.local.yml up -d
+down-local:
+	docker compose -f docker-compose.local.yml down -v
+restart-local: down-local run-local
+fresh-local: down-local build-local run-local
+logs-local:
+	docker logs -f --tail 100 go-boilerplate-app
 
 swagger:
 	swag init -g cmd/api/main.go
@@ -58,8 +63,6 @@ proto:
 	protoc --go_out=. --go_opt=module=go-boilerplate \
 	--go-grpc_out=. --go-grpc_opt=module=go-boilerplate \
 	api/proto/payment/payment.proto
-
-
 
 cert:
 	mkdir -p certs

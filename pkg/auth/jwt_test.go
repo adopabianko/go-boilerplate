@@ -54,7 +54,7 @@ func TestGenerateAndValidateToken(t *testing.T) {
 		RefreshExpiresIn: 10080,
 	}
 
-	userID := uint(123)
+	userID := "019c514b-a933-74f2-8d08-a496675c66cf"
 	// Test Token Pair
 	accessToken, refreshToken, err := auth.GenerateTokenPair(userID, cfg)
 	require.NoError(t, err)

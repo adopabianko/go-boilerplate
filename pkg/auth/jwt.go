@@ -19,7 +19,7 @@ const (
 )
 
 type Claims struct {
-	UserID    uint      `json:"user_id"`
+	UserID    string    `json:"user_id"`
 	TokenType TokenType `json:"token_type"`
 	jwt.RegisteredClaims
 }
@@ -40,7 +40,7 @@ func parsePublicKey(path string) (*rsa.PublicKey, error) {
 	return jwt.ParseRSAPublicKeyFromPEM(keyData)
 }
 
-func GenerateTokenPair(userID uint, cfg config.JWTConfig) (accessToken, refreshToken string, err error) {
+func GenerateTokenPair(userID string, cfg config.JWTConfig) (accessToken, refreshToken string, err error) {
 	key, err := parsePrivateKey(cfg.PrivateKeyPath)
 	if err != nil {
 		return "", "", err
@@ -76,7 +76,7 @@ func GenerateTokenPair(userID uint, cfg config.JWTConfig) (accessToken, refreshT
 }
 
 // Deprecated: Use GenerateTokenPair instead. Keeping for backward compatibility if needed, but updated to use AccessExpiresIn
-func GenerateToken(userID uint, cfg config.JWTConfig) (string, error) {
+func GenerateToken(userID string, cfg config.JWTConfig) (string, error) {
 	accessToken, _, err := GenerateTokenPair(userID, cfg)
 	return accessToken, err
 }
