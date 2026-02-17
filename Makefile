@@ -23,7 +23,10 @@ build:
 	go build -o tmp/$(APP_NAME) cmd/api/main.go
 
 test:
-	go test -v ./...
+	go test -v ./test/unit/...
+
+test-integration:
+	go test -v ./test/integration/...
 
 clean:
 	rm -rf tmp
