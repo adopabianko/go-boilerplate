@@ -99,6 +99,12 @@ This separation ensures that changes in one layer (e.g., switching Databases) do
     make migrate-up
     ```
 
+6.  **Seed Database** (Optional)
+    Populate the database with initial dummy data:
+    ```bash
+    make migrate-seed
+    ```
+
 ## Running the Application
 
 ### Development Mode (Live Reload)

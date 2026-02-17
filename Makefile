@@ -62,6 +62,9 @@ migrate-force:
 	@read -p "Enter version to force: " version; \
 	migrate -path migrations -database "$(DB_URL)" -verbose force $$version
 
+migrate-seed:
+	go run cmd/seed/main.go
+
 proto:
 	protoc --go_out=. --go_opt=module=go-boilerplate \
 	--go-grpc_out=. --go-grpc_opt=module=go-boilerplate \
