@@ -3,6 +3,7 @@ package config
 import (
 	"log"
 	"time"
+	"go-boilerplate/pkg/auth"
 
 	"github.com/caarlos0/env/v10"
 	"github.com/joho/godotenv"
@@ -89,12 +90,8 @@ type CORSConfig struct {
 	AllowedOrigins []string `env:"ALLOWED_ORIGINS" envDefault:"*"`
 }
 
-type JWTConfig struct {
-	PrivateKeyPath   string `env:"PRIVATE_KEY_PATH" envDefault:"certs/private.pem"`
-	PublicKeyPath    string `env:"PUBLIC_KEY_PATH" envDefault:"certs/public.pem"`
-	AccessExpiresIn  int    `env:"ACCESS_EXPIRES_IN" envDefault:"15"`     // in minutes
-	RefreshExpiresIn int    `env:"REFRESH_EXPIRES_IN" envDefault:"10080"` // in minutes (7 days)
-}
+type JWTConfig = auth.JWTConfig
+
 
 func LoadConfig() *Config {
 	// Load .env file if exists

@@ -6,10 +6,17 @@ import (
 	"os"
 	"time"
 
-	"go-boilerplate/internal/config"
-
 	"github.com/golang-jwt/jwt/v5"
 )
+
+type JWTConfig struct {
+	PrivateKeyPath   string `env:"PRIVATE_KEY_PATH" envDefault:"certs/private.pem"`
+	PublicKeyPath    string `env:"PUBLIC_KEY_PATH" envDefault:"certs/public.pem"`
+	AccessExpiresIn  int    `env:"ACCESS_EXPIRES_IN" envDefault:"15"`     // in minutes
+	RefreshExpiresIn int    `env:"REFRESH_EXPIRES_IN" envDefault:"10080"` // in minutes (7 days)
+}
+
+
 
 type TokenType string
 
@@ -40,7 +47,7 @@ func parsePublicKey(path string) (*rsa.PublicKey, error) {
 	return jwt.ParseRSAPublicKeyFromPEM(keyData)
 }
 
-func GenerateTokenPair(userID string, cfg config.JWTConfig) (accessToken, refreshToken string, err error) {
+func GenerateTokenPair(userID string, cfg JWTConfig) (accessToken, refreshToken string, err error) {
 	key, err := parsePrivateKey(cfg.PrivateKeyPath)
 	if err != nil {
 		return "", "", err
@@ -76,20 +83,20 @@ func GenerateTokenPair(userID string, cfg config.JWTConfig) (accessToken, refres
 }
 
 // Deprecated: Use GenerateTokenPair instead. Keeping for backward compatibility if needed, but updated to use AccessExpiresIn
-func GenerateToken(userID string, cfg config.JWTConfig) (string, error) {
+func GenerateToken(userID string, cfg JWTConfig) (string, error) {
 	accessToken, _, err := GenerateTokenPair(userID, cfg)
 	return accessToken, err
 }
 
-func ValidateToken(tokenString string, cfg config.JWTConfig) (*Claims, error) {
+func ValidateToken(tokenString string, cfg JWTConfig) (*Claims, error) {
 	return validateTokenWithType(tokenString, cfg, TokenTypeAccess)
 }
 
-func ValidateRefreshToken(tokenString string, cfg config.JWTConfig) (*Claims, error) {
+func ValidateRefreshToken(tokenString string, cfg JWTConfig) (*Claims, error) {
 	return validateTokenWithType(tokenString, cfg, TokenTypeRefresh)
 }
 
-func validateTokenWithType(tokenString string, cfg config.JWTConfig, expectedType TokenType) (*Claims, error) {
+func validateTokenWithType(tokenString string, cfg JWTConfig, expectedType TokenType) (*Claims, error) {
 	key, err := parsePublicKey(cfg.PublicKeyPath)
 	if err != nil {
 		return nil, err
