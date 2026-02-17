@@ -81,8 +81,8 @@ func TestUserUsecase_Login_Success(t *testing.T) {
 	// Assuming tests are run from internal/usecase, we need to go up to root
 	// Assuming tests are run from internal/usecase, we need to go up to root
 	cfg := &config.Config{JWT: config.JWTConfig{
-		PrivateKeyPath:   "../../certs/private.pem",
-		PublicKeyPath:    "../../certs/public.pem",
+		PrivateKeyPath:   "../../../../certs/private.pem",
+		PublicKeyPath:    "../../../../certs/public.pem",
 		AccessExpiresIn:  15,
 		RefreshExpiresIn: 10080,
 	}}
