@@ -10,6 +10,13 @@ definitions:
     - email
     - password
     type: object
+  dto.RefreshTokenRequest:
+    properties:
+      refresh_token:
+        type: string
+    required:
+    - refresh_token
+    type: object
   dto.RegisterRequest:
     properties:
       email:
@@ -117,6 +124,40 @@ paths:
       summary: Login user
       tags:
       - auth
+  /api/v1/auth/refresh:
+    post:
+      consumes:
+      - application/json
+      description: Get new access token using refresh token
+      parameters:
+      - description: Refresh Token Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.RefreshTokenRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: Refresh Access Token
+      tags:
+      - auth
   /api/v1/auth/register:
     post:
       consumes:
@@ -147,6 +188,31 @@ paths:
       summary: Register a new user
       tags:
       - auth
+  /api/v1/payments/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Check status via gRPC -> External Service
+      parameters:
+      - description: Transaction ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: Check payment status
+      tags:
+      - payments
   /api/v1/products:
     get:
       consumes:
@@ -211,6 +277,82 @@ paths:
       security:
       - BearerAuth: []
       summary: List users
+      tags:
+      - users
+  /api/v1/users/{id}:
+    delete:
+      consumes:
+      - application/json
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: Delete a user
+      tags:
+      - users
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: Get a user by ID
+      tags:
+      - users
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Update Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.Response'
+      summary: Update a user
       tags:
       - users
   /health:
