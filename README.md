@@ -44,6 +44,11 @@ Additional project documentation, such as architectural diagrams, technical guid
 ### `/migrations`
 Database schema manager. Contains SQL files to create (up) or delete (down) database tables to keep the schema synchronized across environments.
 
+### `/test`
+Contains all test suites for the application.
+- **/unit**: Mock-based unit tests for isolated component testing.
+- **/integration**: Component-to-component tests running against real infrastructure (Postgres, Redis).
+
 ## Data Flow
 
 In general, the data flow for an API request is unidirectional:
@@ -107,6 +112,24 @@ go run cmd/api/main.go
 ```
 
 The server will start at `http://localhost:8080`.
+
+## Testing
+
+The project uses a tiered testing strategy:
+
+### 1. Unit Tests
+Isolated tests using mocks. These are fast and don't require external infrastructure.
+```bash
+make test
+```
+*Note: This targets `./test/unit/...`*
+
+### 2. Integration Tests
+Tests the interaction between components against real databases. Requires local infrastructure (Postgres, Redis) to be running.
+```bash
+make test-integration
+```
+*Note: This targets `./test/integration/...`*
 
 ## API Documentation
 
