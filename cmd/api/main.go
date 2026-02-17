@@ -50,7 +50,10 @@ func main() {
 	cfg := config.LoadConfig()
 
 	// Initialize Logger
-	logger.InitLogger(cfg)
+	logger.InitLogger(&logger.LogstashConfig{
+		Host: cfg.Logstash.Host,
+		Port: cfg.Logstash.Port,
+	})
 	defer logger.Log.Sync()
 
 	// Initialize Database

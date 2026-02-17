@@ -90,7 +90,7 @@ func (r *userRepository) List(ctx context.Context, page, limit int, order string
 	}
 
 	// List users
-	query := fmt.Sprintf(`SELECT id, email, created_at AT TIME ZONE '%s', updated_at AT TIME ZONE '%s' FROM users 
+	query := fmt.Sprintf(`SELECT idw, email, created_at AT TIME ZONE '%s', updated_at AT TIME ZONE '%s' FROM users 
                           WHERE deleted_at IS NULL 
                           ORDER BY %s LIMIT $1 OFFSET $2`, timezone, timezone, order)
 

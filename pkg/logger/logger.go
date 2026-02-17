@@ -6,8 +6,6 @@ import (
 	"net"
 	"os"
 
-	"go-boilerplate/internal/config"
-
 	"go.elastic.co/apm/v2"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -15,7 +13,12 @@ import (
 
 var Log *zap.Logger
 
-func InitLogger(cfg *config.Config) {
+type LogstashConfig struct {
+	Host string
+	Port string
+}
+
+func InitLogger(cfg *LogstashConfig) {
 	encoderConfig := zap.NewProductionEncoderConfig()
 	encoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
 	consoleEncoder := zapcore.NewConsoleEncoder(encoderConfig)
@@ -28,8 +31,8 @@ func InitLogger(cfg *config.Config) {
 	var cores []zapcore.Core
 	cores = append(cores, consoleCore)
 
-	if cfg != nil && cfg.Logstash.Host != "" {
-		logstashAddr := net.JoinHostPort(cfg.Logstash.Host, cfg.Logstash.Port)
+	if cfg != nil && cfg.Host != "" {
+		logstashAddr := net.JoinHostPort(cfg.Host, cfg.Port)
 		udpConn, err := net.Dial("udp", logstashAddr)
 		if err == nil {
 			logstashCore := zapcore.NewCore(jsonEncoder, zapcore.AddSync(udpConn), zapcore.InfoLevel)
