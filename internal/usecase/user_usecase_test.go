@@ -19,13 +19,13 @@ type MockUserRepository struct {
 	mock.Mock
 }
 
-func (m *MockUserRepository) Create(ctx context.Context, user *entity.User, timezone string) error {
-	args := m.Called(ctx, user, timezone)
+func (m *MockUserRepository) Create(ctx context.Context, user *entity.User) error {
+	args := m.Called(ctx, user)
 	return args.Error(0)
 }
 
-func (m *MockUserRepository) GetByEmail(ctx context.Context, email string, timezone string) (*entity.User, error) {
-	args := m.Called(ctx, email, timezone)
+func (m *MockUserRepository) GetByEmail(ctx context.Context, email string) (*entity.User, error) {
+	args := m.Called(ctx, email)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
@@ -45,8 +45,8 @@ func (m *MockUserRepository) GetByID(ctx context.Context, id string, timezone st
 	return args.Get(0).(*entity.User), args.Error(1)
 }
 
-func (m *MockUserRepository) Update(ctx context.Context, user *entity.User, timezone string) error {
-	args := m.Called(ctx, user, timezone)
+func (m *MockUserRepository) Update(ctx context.Context, user *entity.User) error {
+	args := m.Called(ctx, user)
 	return args.Error(0)
 }
 
@@ -61,17 +61,17 @@ func TestUserUsecase_Register_Success(t *testing.T) {
 
 	uc := usecase.NewUserUsecase(mockRepo, cfg, nil)
 
-	mockRepo.On("GetByEmail", mock.Anything, "test@example.com", "").Return(nil, nil)
+	mockRepo.On("GetByEmail", mock.Anything, "test@example.com").Return(nil, nil)
 	mockRepo.On("Create", mock.Anything, mock.MatchedBy(func(u *entity.User) bool {
 		return u.Email == "test@example.com"
-	}), "UTC").Run(func(args mock.Arguments) {
+	})).Run(func(args mock.Arguments) {
 		u := args.Get(1).(*entity.User)
 		u.ID = "test-uuid"
 		u.CreatedAt = time.Now()
 		u.UpdatedAt = time.Now()
 	}).Return(nil)
 
-	err := uc.Register(context.Background(), "test@example.com", "password123", "UTC")
+	err := uc.Register(context.Background(), "test@example.com", "password123")
 	assert.NoError(t, err)
 	mockRepo.AssertExpectations(t)
 }
@@ -96,7 +96,7 @@ func TestUserUsecase_Login_Success(t *testing.T) {
 		Password: string(hashedPassword),
 	}
 
-	mockRepo.On("GetByEmail", mock.Anything, "test@example.com", "").Return(user, nil)
+	mockRepo.On("GetByEmail", mock.Anything, "test@example.com").Return(user, nil)
 
 	accessToken, refreshToken, err := uc.Login(context.Background(), "test@example.com", "password123")
 	assert.NoError(t, err)

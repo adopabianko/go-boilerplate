@@ -24,8 +24,8 @@ type MockUserUsecase struct {
 	mock.Mock
 }
 
-func (m *MockUserUsecase) Register(ctx context.Context, email, password string, timezone string) error {
-	args := m.Called(ctx, email, password, timezone)
+func (m *MockUserUsecase) Register(ctx context.Context, email, password string) error {
+	args := m.Called(ctx, email, password)
 	return args.Error(0)
 }
 
@@ -52,8 +52,8 @@ func (m *MockUserUsecase) GetUser(ctx context.Context, id string, timezone strin
 	return args.Get(0).(*entity.User), args.Error(1)
 }
 
-func (m *MockUserUsecase) UpdateUser(ctx context.Context, id string, email string, timezone string) error {
-	args := m.Called(ctx, id, email, timezone)
+func (m *MockUserUsecase) UpdateUser(ctx context.Context, id string, email string) error {
+	args := m.Called(ctx, id, email)
 	return args.Error(0)
 }
 
@@ -81,7 +81,7 @@ func TestUserHandler_Register(t *testing.T) {
 	}
 	body, _ := json.Marshal(reqBody)
 
-	mockUsecase.On("Register", mock.Anything, reqBody.Email, reqBody.Password, "UTC").Return(nil)
+	mockUsecase.On("Register", mock.Anything, reqBody.Email, reqBody.Password).Return(nil)
 
 	req, _ := http.NewRequest("POST", "/register", bytes.NewBuffer(body))
 	w := httptest.NewRecorder()

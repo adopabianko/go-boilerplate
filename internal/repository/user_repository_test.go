@@ -38,20 +38,17 @@ func TestUserRepository_Create(t *testing.T) {
 		Password: "hashed_password",
 	}
 
-	const sqlInsert = `INSERT INTO users (email, password) 
-              VALUES ($1, $2) RETURNING id, created_at AT TIME ZONE 'UTC' AT TIME ZONE 'UTC', updated_at AT TIME ZONE 'UTC' AT TIME ZONE 'UTC'`
+	const sqlInsert = `INSERT INTO users (email, password)
+              VALUES ($1, $2) RETURNING id`
 
-	now := time.Now()
 	mock.ExpectQuery(regexp.QuoteMeta(sqlInsert)).
 		WithArgs(user.Email, user.Password).
-		WillReturnRows(pgxmock.NewRows([]string{"id", "created_at", "updated_at"}).
-			AddRow("019c514b-a933-74f2-8d08-a496675c66cf", now, now))
+		WillReturnRows(pgxmock.NewRows([]string{"id"}).
+			AddRow("019c514b-a933-74f2-8d08-a496675c66cf"))
 
-	err = repo.Create(context.Background(), user, "UTC")
+	err = repo.Create(context.Background(), user)
 	assert.NoError(t, err)
 	assert.Equal(t, "019c514b-a933-74f2-8d08-a496675c66cf", user.ID)
-	assert.False(t, user.CreatedAt.IsZero())
-	assert.False(t, user.UpdatedAt.IsZero())
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -67,17 +64,17 @@ func TestUserRepository_GetByEmail(t *testing.T) {
 	repo := repository.NewUserRepository(db)
 	email := "test@example.com"
 
-	const sqlSelect = `SELECT id, email, password, created_at AT TIME ZONE 'UTC' AT TIME ZONE 'UTC', updated_at AT TIME ZONE 'UTC' AT TIME ZONE 'UTC' FROM users 
+	const sqlSelect = `SELECT id, email, password FROM users 
               WHERE email = $1 AND deleted_at IS NULL`
 
-	rows := pgxmock.NewRows([]string{"id", "email", "password", "created_at", "updated_at"}).
-		AddRow("019c514b-a933-74f2-8d08-a496675c66cf", email, "hashed_password", time.Now(), time.Now())
+	rows := pgxmock.NewRows([]string{"id", "email", "password"}).
+		AddRow("019c514b-a933-74f2-8d08-a496675c66cf", email, "hashed_password")
 
 	mock.ExpectQuery(regexp.QuoteMeta(sqlSelect)).
 		WithArgs(email).
 		WillReturnRows(rows)
 
-	user, err := repo.GetByEmail(context.Background(), email, "UTC")
+	user, err := repo.GetByEmail(context.Background(), email)
 	assert.NoError(t, err)
 	assert.NotNil(t, user)
 	assert.Equal(t, email, user.Email)
@@ -106,7 +103,7 @@ func TestUserRepository_List(t *testing.T) {
 		AddRow("019c514b-a933-74f2-8d08-a496675c66cf", "u1@example.com", time.Now(), time.Now()).
 		AddRow("019c514b-a933-74f2-8d08-a496675c66d0", "u2@example.com", time.Now(), time.Now())
 
-	mock.ExpectQuery(regexp.QuoteMeta(`SELECT id, email, created_at AT TIME ZONE 'UTC' AT TIME ZONE 'UTC', updated_at AT TIME ZONE 'UTC' AT TIME ZONE 'UTC' FROM users 
+	mock.ExpectQuery(regexp.QuoteMeta(`SELECT id, email, created_at AT TIME ZONE 'UTC', updated_at AT TIME ZONE 'UTC' FROM users 
                           WHERE deleted_at IS NULL 
                           ORDER BY created_at desc LIMIT $1 OFFSET $2`)).
 		WithArgs(limit, 0).
@@ -131,7 +128,7 @@ func TestUserRepository_GetByID_NotFound(t *testing.T) {
 	repo := repository.NewUserRepository(db)
 	id := "019c514b-a933-74f2-8d08-a496675c66cf"
 
-	const sqlSelect = `SELECT id, email, password, created_at AT TIME ZONE 'UTC' AT TIME ZONE 'UTC', updated_at AT TIME ZONE 'UTC' AT TIME ZONE 'UTC' FROM users 
+	const sqlSelect = `SELECT id, email, password, created_at AT TIME ZONE 'UTC', updated_at AT TIME ZONE 'UTC' FROM users 
               WHERE id = $1 AND deleted_at IS NULL`
 
 	mock.ExpectQuery(regexp.QuoteMeta(sqlSelect)).
