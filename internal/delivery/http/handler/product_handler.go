@@ -33,8 +33,8 @@ func (h *ProductHandler) ListProducts(c *gin.Context) {
 	page := 1
 	limit := 10
 
-	// Reuse PaginationQuery dto if compatible, or just parse manually
-	var q dto.PaginationQuery
+	// Reuse ListProductsRequest dto if compatible, or just parse manually
+	var q dto.ListProductsRequest
 	if err := c.ShouldBindQuery(&q); err == nil {
 		if q.Page > 0 {
 			page = q.Page

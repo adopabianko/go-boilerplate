@@ -127,9 +127,7 @@ func (h *UserHandler) RefreshToken(c *gin.Context) {
 // @Tags         users
 // @Accept       json
 // @Produce      json
-// @Param        page  query     int     false  "Page number" default(1)
-// @Param        limit query     int     false  "Items per page" default(10)
-// @Param        order query     string  false  "Sort order (e.g. created_at desc)"
+// @Param        request query dto.ListUsersRequest true "List Users Request"
 // @Success      200  {object}  response.Response
 // @Failure      500  {object}  response.Response
 // @Security     BearerAuth
@@ -138,11 +136,14 @@ func (h *UserHandler) ListUsers(c *gin.Context) {
 	ctx, span := tracer.StartSpan(c.Request.Context(), "UserHandler.ListUsers", "handler")
 	defer span.End()
 
-	var q dto.PaginationQuery
-	_ = c.ShouldBindQuery(&q)
+	var q dto.ListUsersRequest
+	if err := c.ShouldBindQuery(&q); err != nil {
+		response.Error(c, errors.New(http.StatusBadRequest, err.Error()))
+		return
+	}
 
 	tz := request.GetTimeLocation(c)
-	userResponses, meta, err := h.usecase.ListUsers(ctx, q.Page, q.Limit, q.Order, tz)
+	userResponses, meta, err := h.usecase.ListUsers(ctx, q, tz)
 	if err != nil {
 		response.Error(c, err)
 		return

@@ -23,7 +23,7 @@ type UserUsecase interface {
 	Register(ctx context.Context, email, password string) error
 	Login(ctx context.Context, email, password string) (string, string, error)
 	RefreshToken(ctx context.Context, refreshToken string) (string, string, error)
-	ListUsers(ctx context.Context, page, limit int, order string, timezone string) ([]dto.UserResponse, response.Meta, error)
+	ListUsers(ctx context.Context, req dto.ListUsersRequest, timezone string) ([]dto.UserResponse, response.Meta, error)
 	GetUser(ctx context.Context, id string, timezone string) (*entity.User, error)
 	UpdateUser(ctx context.Context, id string, email string) error
 	DeleteUser(ctx context.Context, id string) error
@@ -109,24 +109,24 @@ func (u *userUsecase) RefreshToken(ctx context.Context, tokenString string) (str
 	return accessToken, refreshToken, nil
 }
 
-func (u *userUsecase) ListUsers(ctx context.Context, page, limit int, order string, timezone string) ([]dto.UserResponse, response.Meta, error) {
+func (u *userUsecase) ListUsers(ctx context.Context, req dto.ListUsersRequest, timezone string) ([]dto.UserResponse, response.Meta, error) {
 	ctx, span := tracer.StartSpan(ctx, "UserUsecase.ListUsers", "usecase")
 	defer span.End()
 
-	if page <= 0 {
-		page = 1
+	if req.Page <= 0 {
+		req.Page = 1
 	}
-	if limit <= 0 {
-		limit = 10
+	if req.Limit <= 0 {
+		req.Limit = 10
 	}
-	if limit > 100 {
-		limit = 100
+	if req.Limit > 100 {
+		req.Limit = 100
 	}
-	if order == "" {
-		order = "created_at desc"
+	if req.Order == "" {
+		req.Order = "created_at desc"
 	}
 
-	users, total, err := u.repo.List(ctx, page, limit, order, timezone)
+	users, total, err := u.repo.List(ctx, req, timezone)
 	if err != nil {
 		return nil, response.Meta{}, appErrors.Wrap(err, 500, "Failed to list users")
 	}
@@ -141,12 +141,12 @@ func (u *userUsecase) ListUsers(ctx context.Context, page, limit int, order stri
 		}
 	}
 
-	offset := (page - 1) * limit
+	offset := (req.Page - 1) * req.Limit
 	meta := response.Meta{
 		Offset: offset,
-		Limit:  limit,
+		Limit:  req.Limit,
 		Total:  total,
-		Order:  order,
+		Order:  req.Order,
 	}
 
 	return userResponses, meta, nil

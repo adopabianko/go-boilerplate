@@ -23,7 +23,11 @@ type RefreshTokenRequest struct {
 	RefreshToken string `json:"refresh_token" binding:"required"`
 }
 
-type PaginationQuery struct {
+type ListUsersRequest struct {
+	// search
+	Search string `form:"search"`
+
+	// pagination
 	Page  int    `form:"page"`
 	Limit int    `form:"limit"`
 	Order string `form:"order"`

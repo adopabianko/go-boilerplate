@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"go-boilerplate/internal/dto"
 	"go-boilerplate/internal/entity"
 	"go-boilerplate/internal/infrastructure/database"
 	"go-boilerplate/pkg/tracer"
@@ -15,7 +16,7 @@ import (
 type UserRepository interface {
 	Create(ctx context.Context, user *entity.User) error
 	GetByEmail(ctx context.Context, email string) (*entity.User, error)
-	List(ctx context.Context, page, limit int, order string, timezone string) ([]entity.User, int64, error)
+	List(ctx context.Context, req dto.ListUsersRequest, timezone string) ([]entity.User, int64, error)
 	GetByID(ctx context.Context, id string, timezone string) (*entity.User, error)
 	Update(ctx context.Context, user *entity.User) error
 	Delete(ctx context.Context, id string) error
@@ -66,7 +67,7 @@ func (r *userRepository) GetByEmail(ctx context.Context, email string) (*entity.
 	return &user, nil
 }
 
-func (r *userRepository) List(ctx context.Context, page, limit int, order string, timezone string) ([]entity.User, int64, error) {
+func (r *userRepository) List(ctx context.Context, req dto.ListUsersRequest, timezone string) ([]entity.User, int64, error) {
 	ctx, span := tracer.StartSpan(ctx, "UserRepository.List", "repository")
 	defer span.End()
 
@@ -74,15 +75,20 @@ func (r *userRepository) List(ctx context.Context, page, limit int, order string
 		timezone = "UTC"
 	}
 
-	if order == "" {
-		order = "created_at desc"
+	searchQuery := ""
+	if req.Search != "" {
+		searchQuery = fmt.Sprintf(" AND email ILIKE '%%%s%%'", req.Search)
 	}
 
-	offset := (page - 1) * limit
+	if req.Order == "" {
+		req.Order = "created_at desc"
+	}
+
+	offset := (req.Page - 1) * req.Limit
 
 	// Count total
 	var total int64
-	countQuery := `SELECT count(*) FROM users WHERE deleted_at IS NULL`
+	countQuery := fmt.Sprintf(`SELECT count(*) FROM users WHERE deleted_at IS NULL %s`, searchQuery)
 
 	// Slave for Read
 	if err := r.db.Slave.QueryRow(ctx, countQuery).Scan(&total); err != nil {
@@ -91,11 +97,11 @@ func (r *userRepository) List(ctx context.Context, page, limit int, order string
 
 	// List users
 	query := fmt.Sprintf(`SELECT id, email, created_at AT TIME ZONE '%s', updated_at AT TIME ZONE '%s' FROM users 
-                          WHERE deleted_at IS NULL 
-                          ORDER BY %s LIMIT $1 OFFSET $2`, timezone, timezone, order)
+                          WHERE deleted_at IS NULL %s 
+                          ORDER BY %s LIMIT $1 OFFSET $2`, timezone, timezone, searchQuery, req.Order)
 
 	// Slave for Read
-	rows, err := r.db.Slave.Query(ctx, query, limit, offset)
+	rows, err := r.db.Slave.Query(ctx, query, req.Limit, offset)
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to list users: %w", err)
 	}
