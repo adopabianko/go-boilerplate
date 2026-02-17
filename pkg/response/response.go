@@ -52,7 +52,7 @@ func Error(c *gin.Context, err error) {
 			Message: customErr.Message,
 			Error: &ErrorDetail{
 				Code:    customErr.Code,
-				Message: customErr.Message,
+				Message: customErr.Error(),
 			},
 		})
 		return
@@ -64,7 +64,7 @@ func Error(c *gin.Context, err error) {
 		Message: "Internal Server Error",
 		Error: &ErrorDetail{
 			Code:    http.StatusInternalServerError,
-			Message: "Internal Server Error",
+			Message: err.Error(),
 		},
 	})
 }
