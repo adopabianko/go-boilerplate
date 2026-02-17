@@ -18,12 +18,12 @@ import (
 )
 
 type UserUsecase interface {
-	Register(ctx context.Context, email, password string, timezone string) error
+	Register(ctx context.Context, email, password string) error
 	Login(ctx context.Context, email, password string) (string, string, error)
 	RefreshToken(ctx context.Context, refreshToken string) (string, string, error)
 	ListUsers(ctx context.Context, page, limit int, order string, timezone string) ([]entity.User, int64, error)
 	GetUser(ctx context.Context, id string, timezone string) (*entity.User, error)
-	UpdateUser(ctx context.Context, id string, email string, timezone string) error
+	UpdateUser(ctx context.Context, id string, email string) error
 	DeleteUser(ctx context.Context, id string) error
 }
 
@@ -37,15 +37,14 @@ func NewUserUsecase(repo repository.UserRepository, cfg *config.Config, rdb *red
 	return &userUsecase{repo: repo, config: cfg, redis: rdb}
 }
 
-func (u *userUsecase) Register(ctx context.Context, email, password string, timezone string) error {
+func (u *userUsecase) Register(ctx context.Context, email, password string) error {
 	ctx, span := tracer.StartSpan(ctx, "UserUsecase.Register", "usecase")
 	defer span.End()
 
-	existingUser, _ := u.repo.GetByEmail(ctx, email, "")
+	existingUser, _ := u.repo.GetByEmail(ctx, email)
 	if existingUser != nil {
 		return appErrors.New(400, "Email already exists")
 	}
-
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
@@ -57,7 +56,7 @@ func (u *userUsecase) Register(ctx context.Context, email, password string, time
 		Password: string(hashedPassword),
 	}
 
-	if err := u.repo.Create(ctx, user, timezone); err != nil {
+	if err := u.repo.Create(ctx, user); err != nil {
 		return appErrors.Wrap(err, 500, "Failed to create user")
 	}
 
@@ -68,7 +67,7 @@ func (u *userUsecase) Login(ctx context.Context, email, password string) (string
 	ctx, span := tracer.StartSpan(ctx, "UserUsecase.Login", "usecase")
 	defer span.End()
 
-	user, err := u.repo.GetByEmail(ctx, email, "") // Timezone not needed for password check
+	user, err := u.repo.GetByEmail(ctx, email)
 	if err != nil {
 		return "", "", appErrors.New(401, "Invalid credentials")
 	}
@@ -161,7 +160,7 @@ func (u *userUsecase) GetUser(ctx context.Context, id string, timezone string) (
 	return user, nil
 }
 
-func (u *userUsecase) UpdateUser(ctx context.Context, id string, email string, timezone string) error {
+func (u *userUsecase) UpdateUser(ctx context.Context, id string, email string) error {
 	ctx, span := tracer.StartSpan(ctx, "UserUsecase.UpdateUser", "usecase")
 	defer span.End()
 
@@ -171,16 +170,12 @@ func (u *userUsecase) UpdateUser(ctx context.Context, id string, email string, t
 	}
 
 	user.Email = email
-	if err := u.repo.Update(ctx, user, timezone); err != nil {
+	if err := u.repo.Update(ctx, user); err != nil {
 		return appErrors.Wrap(err, 500, "Failed to update user")
 	}
 
 	// Invalidate Cache (all timezones for this user)
-	// For simplicity, we'll just invalidate the one, but ideally we'd have a way to purge all.
-	// Since we don't track all requested timezones, we might need a pattern or just clear by prefix if redis supports it easily.
-	// We'll just clear the common one and the current one.
-	u.redis.Del(ctx, fmt.Sprintf("user:%s:%s", id, timezone))
-	u.redis.Del(ctx, fmt.Sprintf("user:%s:UTC", id))
+	u.redis.Del(ctx, fmt.Sprintf("user:%s:*", id))
 
 	return nil
 }
@@ -193,11 +188,8 @@ func (u *userUsecase) DeleteUser(ctx context.Context, id string) error {
 		return appErrors.Wrap(err, 500, "Failed to delete user")
 	}
 
-	// Invalidate Cache
-	// Since we use timezone-specific keys, we'd ideally purge all. 
-	// For now, we'll just invalidate the common ones or rely on TTL.
-	u.redis.Del(ctx, fmt.Sprintf("user:%s:UTC", id))
-	// In a real app, maybe use u.redis.Del(ctx, "user:"+id+":*") if using a compatible redis client/setup
+	// Invalidate Cache (all timezones for this user)
+	u.redis.Del(ctx, fmt.Sprintf("user:%s:*", id))
 
 	return nil
 }

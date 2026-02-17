@@ -155,24 +155,24 @@ Here are example commands to test the endpoints.
 
 ### 1. Health Check
 ```bash
-curl -i http://localhost:8080/health
+curl --location 'http://localhost:8080/health'
 ```
 
 ### 2. Register User
 ```bash
-curl -i -X POST http://localhost:8080/api/v1/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{
+curl --location 'http://localhost:8080/api/v1/auth/register' \
+--header 'Content-Type: application/json' \
+--data-raw '{
     "email": "user@example.com",
     "password": "password123"
-  }'
+}'
 ```
 
 ### 3. Login User (Get Tokens)
 ```bash
-curl -i -X POST http://localhost:8080/api/v1/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{
+curl --location 'http://localhost:8080/api/v1/auth/login' \
+--header 'Content-Type: application/json' \
+--data-raw '{
     "email": "user@example.com",
     "password": "password123"
   }'
@@ -188,52 +188,59 @@ curl -i -X POST http://localhost:8080/api/v1/auth/login \
 
 ### 4. Refresh Access Token
 ```bash
-curl -i -X POST http://localhost:8080/api/v1/auth/refresh \
-  -H "Content-Type: application/json" \
-  -d '{
-    "refresh_token": "<YOUR_REFRESH_TOKEN>"
-  }'
+curl --location 'http://localhost:8080/api/v1/auth/refresh' \
+--header 'Content-Type: application/json' \
+--data '{
+    "refresh_token": "<TOKEN>"
+}'
 ```
 
 ### 5. Access Protected API (List Users)
 Replace `<ACCESS_TOKEN>` with the token obtained from login.
 ```bash
-curl -i -X GET "http://localhost:8080/api/v1/users?page=1&limit=5&order=created_at%20desc" \
-  -H "Authorization: Bearer <ACCESS_TOKEN>"
+curl --location 'http://localhost:8080/api/v1/users?page=1&limit=5&order=created_at%20desc' \
+--header 'X-Timezone: Asia/Jakarta' \
+--header 'Authorization: Bearer <TOKEN>'
 ```
 
 ### 5. Get Current User Profile
 ```bash
-curl -i -X GET http://localhost:8080/api/v1/users/me \
-  -H "Authorization: Bearer <TOKEN>"
+curl --location 'http://localhost:8080/api/v1/users/me' \
+--header 'X-Timezone: Asia/Jakarta' \
+--header 'Authorization: Bearer <TOKEN>'
 ```
 
 ### 6. User CRUD Operations (Protected)
 
 **Get User Detail:**
 ```bash
-curl -i -X GET http://localhost:8080/api/v1/users/1 \
-  -H "Authorization: Bearer <TOKEN>"
+curl --location 'http://localhost:8080/api/v1/users/4d40630c-e7a8-4ebb-bb83-d1d5778271de' \
+--header 'X-Timezone: Asia/Jakarta' \
+--header 'Authorization: Bearer <TOKEN>'
 ```
 
 **Update User:**
 ```bash
-curl -i -X PUT http://localhost:8080/api/v1/users/1 \
-  -H "Authorization: Bearer <TOKEN>" \
-  -H "Content-Type: application/json" \
-  -d '{"email": "updated@example.com"}'
+curl --location --request PUT 'http://localhost:8080/api/v1/users/4d40630c-e7a8-4ebb-bb83-d1d5778271de' \
+--header 'Content-Type: application/json' \
+--header 'Authorization: Bearer <TOKEN>' \
+--data-raw '{
+    "email": "updated@example.com",
+    "password": "admin123"
+}'
 ```
 
 **Delete User:**
 ```bash
-curl -i -X DELETE http://localhost:8080/api/v1/users/1 \
-  -H "Authorization: Bearer <TOKEN>"
+curl --location --request DELETE 'http://localhost:8080/api/v1/users/4d40630c-e7a8-4ebb-bb83-d1d5778271de' \
+--header 'Authorization: Bearer <TOKEN>'
 ```
 
 ### 7. Get Products (External API)
 Fetch products from DummyJSON integration.
 ```bash
-curl -i -X GET "http://localhost:8080/api/v1/products?limit=5&page=1"
+curl --location 'http://localhost:8080/api/v1/products?limit=5&page=1' \
+--header 'Authorization: Bearer <TOKEN>'
 ```
 
 ### 8. Check Payment Status (gRPC)

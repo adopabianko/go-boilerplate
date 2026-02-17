@@ -77,7 +77,7 @@ func NewRouter(
 		}
 
 		product := api.Group("/products")
-		// Optional: Add AuthMiddleware if needed
+		product.Use(middleware.AuthMiddleware(cfg.JWT))
 		{
 			product.GET("", productHandler.ListProducts)
 		}

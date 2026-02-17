@@ -43,8 +43,7 @@ func (h *UserHandler) Register(c *gin.Context) {
 		return
 	}
 
-	tz := request.GetTimeLocation(c)
-	if err := h.usecase.Register(ctx, req.Email, req.Password, tz); err != nil {
+	if err := h.usecase.Register(ctx, req.Email, req.Password); err != nil {
 		response.Error(c, err)
 		return
 	}
@@ -248,8 +247,7 @@ func (h *UserHandler) UpdateUser(c *gin.Context) {
 		return
 	}
 
-	tz := request.GetTimeLocation(c)
-	if err := h.usecase.UpdateUser(ctx, idStr, req.Email, tz); err != nil {
+	if err := h.usecase.UpdateUser(ctx, idStr, req.Email); err != nil {
 		response.Error(c, err)
 		return
 	}
@@ -283,4 +281,3 @@ func (h *UserHandler) DeleteUser(c *gin.Context) {
 
 	response.Success(c, http.StatusOK, "User deleted successfully", nil)
 }
-
