@@ -7,11 +7,13 @@ import (
 	"time"
 
 	"go-boilerplate/internal/config"
+	"go-boilerplate/internal/dto"
 	"go-boilerplate/internal/entity"
 	"go-boilerplate/internal/infrastructure/redis"
 	"go-boilerplate/internal/repository"
 	"go-boilerplate/pkg/auth"
 	appErrors "go-boilerplate/pkg/errors"
+	"go-boilerplate/pkg/response"
 	"go-boilerplate/pkg/tracer"
 
 	"golang.org/x/crypto/bcrypt"
@@ -21,7 +23,7 @@ type UserUsecase interface {
 	Register(ctx context.Context, email, password string) error
 	Login(ctx context.Context, email, password string) (string, string, error)
 	RefreshToken(ctx context.Context, refreshToken string) (string, string, error)
-	ListUsers(ctx context.Context, page, limit int, order string, timezone string) ([]entity.User, int64, error)
+	ListUsers(ctx context.Context, page, limit int, order string, timezone string) ([]dto.UserResponse, response.Meta, error)
 	GetUser(ctx context.Context, id string, timezone string) (*entity.User, error)
 	UpdateUser(ctx context.Context, id string, email string) error
 	DeleteUser(ctx context.Context, id string) error
@@ -107,7 +109,7 @@ func (u *userUsecase) RefreshToken(ctx context.Context, tokenString string) (str
 	return accessToken, refreshToken, nil
 }
 
-func (u *userUsecase) ListUsers(ctx context.Context, page, limit int, order string, timezone string) ([]entity.User, int64, error) {
+func (u *userUsecase) ListUsers(ctx context.Context, page, limit int, order string, timezone string) ([]dto.UserResponse, response.Meta, error) {
 	ctx, span := tracer.StartSpan(ctx, "UserUsecase.ListUsers", "usecase")
 	defer span.End()
 
@@ -120,13 +122,34 @@ func (u *userUsecase) ListUsers(ctx context.Context, page, limit int, order stri
 	if limit > 100 {
 		limit = 100
 	}
+	if order == "" {
+		order = "created_at desc"
+	}
 
 	users, total, err := u.repo.List(ctx, page, limit, order, timezone)
 	if err != nil {
-		return nil, 0, appErrors.Wrap(err, 500, "Failed to list users")
+		return nil, response.Meta{}, appErrors.Wrap(err, 500, "Failed to list users")
 	}
 
-	return users, total, nil
+	userResponses := make([]dto.UserResponse, len(users))
+	for i, u := range users {
+		userResponses[i] = dto.UserResponse{
+			ID:        u.ID,
+			Email:     u.Email,
+			CreatedAt: u.CreatedAt,
+			UpdatedAt: u.UpdatedAt,
+		}
+	}
+
+	offset := (page - 1) * limit
+	meta := response.Meta{
+		Offset: offset,
+		Limit:  limit,
+		Total:  total,
+		Order:  order,
+	}
+
+	return userResponses, meta, nil
 }
 
 func (u *userUsecase) GetUser(ctx context.Context, id string, timezone string) (*entity.User, error) {

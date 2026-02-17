@@ -115,11 +115,13 @@ func TestUserUsecase_ListUsers(t *testing.T) {
 		{ID: "019c514b-a933-74f2-8d08-a496675c66cf", Email: "u1@example.com"},
 	}
 
-	mockRepo.On("List", mock.Anything, 1, 10, "", "UTC").Return(users, int64(1), nil)
+	mockRepo.On("List", mock.Anything, 1, 10, "created_at desc", "UTC").Return(users, int64(1), nil)
 
-	res, total, err := uc.ListUsers(context.Background(), 1, 10, "", "UTC")
+	res, meta, err := uc.ListUsers(context.Background(), 1, 10, "", "UTC")
 	assert.NoError(t, err)
-	assert.Equal(t, int64(1), total)
+	assert.Equal(t, int64(1), meta.Total)
+	assert.Equal(t, "created_at desc", meta.Order)
 	assert.Len(t, res, 1)
+	assert.Equal(t, "u1@example.com", res[0].Email)
 	mockRepo.AssertExpectations(t)
 }

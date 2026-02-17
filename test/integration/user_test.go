@@ -125,4 +125,23 @@ func TestUserIntegration(t *testing.T) {
 		data := res.Data.(map[string]interface{})
 		require.Equal(t, "integration@example.com", data["email"])
 	})
+
+	t.Run("List Users Success", func(t *testing.T) {
+		req, _ := http.NewRequest("GET", "/users?page=1&limit=10", nil)
+		r.GET("/users", userHandler.ListUsers) // Register route for this test
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, req)
+
+		require.Equal(t, http.StatusOK, w.Code)
+		
+		var res response.Response
+		err := json.Unmarshal(w.Body.Bytes(), &res)
+		require.NoError(t, err)
+		require.True(t, res.Success)
+		
+		require.NotNil(t, res.Data)
+		require.NotNil(t, res.Meta)
+		require.Equal(t, 10, res.Meta.Limit)
+		require.GreaterOrEqual(t, res.Meta.Total, int64(1))
+	})
 }

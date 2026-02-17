@@ -39,9 +39,9 @@ func (m *MockUserUsecase) RefreshToken(ctx context.Context, refreshToken string)
 	return args.String(0), args.String(1), args.Error(2)
 }
 
-func (m *MockUserUsecase) ListUsers(ctx context.Context, page, limit int, order string, timezone string) ([]entity.User, int64, error) {
+func (m *MockUserUsecase) ListUsers(ctx context.Context, page, limit int, order string, timezone string) ([]dto.UserResponse, response.Meta, error) {
 	args := m.Called(ctx, page, limit, order, timezone)
-	return args.Get(0).([]entity.User), args.Get(1).(int64), args.Error(2)
+	return args.Get(0).([]dto.UserResponse), args.Get(1).(response.Meta), args.Error(2)
 }
 
 func (m *MockUserUsecase) GetUser(ctx context.Context, id string, timezone string) (*entity.User, error) {
@@ -130,10 +130,11 @@ func TestUserHandler_ListUsers(t *testing.T) {
 	r := setupRouter()
 	r.GET("/users", h.ListUsers)
 
-	users := []entity.User{
+	userResponses := []dto.UserResponse{
 		{ID: "019c514b-a933-74f2-8d08-a496675c66cf", Email: "u1@example.com"},
 	}
-	mockUsecase.On("ListUsers", mock.Anything, 1, 10, "created_at desc", "UTC").Return(users, int64(1), nil)
+	meta := response.Meta{Total: 1, Limit: 10, Offset: 0, Order: "created_at desc"}
+	mockUsecase.On("ListUsers", mock.Anything, 1, 10, "", "UTC").Return(userResponses, meta, nil)
 
 	req, _ := http.NewRequest("GET", "/users?page=1&limit=10", nil)
 	w := httptest.NewRecorder()

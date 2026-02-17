@@ -138,48 +138,14 @@ func (h *UserHandler) ListUsers(c *gin.Context) {
 	ctx, span := tracer.StartSpan(c.Request.Context(), "UserHandler.ListUsers", "handler")
 	defer span.End()
 
-	// Default values
-	page := 1
-	limit := 10
-	order := "created_at desc"
-
 	var q dto.PaginationQuery
-	if err := c.ShouldBindQuery(&q); err == nil {
-		if q.Page > 0 {
-			page = q.Page
-		}
-		if q.Limit > 0 {
-			limit = q.Limit
-		}
-		if q.Order != "" {
-			order = q.Order
-		}
-	}
+	_ = c.ShouldBindQuery(&q)
 
 	tz := request.GetTimeLocation(c)
-	users, total, err := h.usecase.ListUsers(ctx, page, limit, order, tz)
+	userResponses, meta, err := h.usecase.ListUsers(ctx, q.Page, q.Limit, q.Order, tz)
 	if err != nil {
 		response.Error(c, err)
 		return
-	}
-
-	userResponses := make([]dto.UserResponse, len(users))
-	for i, u := range users {
-		userResponses[i] = dto.UserResponse{
-			ID:        u.ID,
-			Email:     u.Email,
-			CreatedAt: u.CreatedAt,
-			UpdatedAt: u.UpdatedAt,
-		}
-	}
-
-	offset := (page - 1) * limit
-
-	meta := response.Meta{
-		Offset: offset,
-		Limit:  limit,
-		Total:  total,
-		Order:  order,
 	}
 
 	response.SuccessWithPagination(c, http.StatusOK, "User list", userResponses, meta)
